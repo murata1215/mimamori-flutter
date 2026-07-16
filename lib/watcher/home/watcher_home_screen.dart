@@ -1,0 +1,155 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/models/client_status.dart';
+import '../../core/models/watched_client.dart';
+import '../../settings/settings_screen.dart';
+import '../detail/client_detail_screen.dart';
+import '../owner/owner_dashboard_screen.dart';
+import '../pairing/pairing_issue_screen.dart';
+import '../paywall/paywall_screen.dart';
+import '../watcher_providers.dart';
+
+/// ウォッチャーのホーム（クライアント一覧）。
+/// カード表示: ステータスバッジ＋名前のみ。
+/// 最終操作時刻・行動詳細は表示しない（プライバシー最小開示）。
+class WatcherHomeScreen extends ConsumerWidget {
+  const WatcherHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final clientsAsync = ref.watch(watchedClientsProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('見守り'),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard, size: 26),
+            tooltip: 'オーナーダッシュボード',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const OwnerDashboardScreen(),
+            )),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, size: 26),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const SettingsScreen(),
+            )),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: clientsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('読み込みに失敗しました\n$e',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16)),
+            ),
+          ),
+          data: (clients) {
+            if (clients.isEmpty) {
+              return _empty(context);
+            }
+            return RefreshIndicator(
+              onRefresh: () async => ref.invalidate(watchedClientsProvider),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: clients.length,
+                itemBuilder: (_, i) => _ClientCard(client: clients[i]),
+              ),
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _addClient(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('見守りを追加', style: TextStyle(fontSize: 16)),
+      ),
+    );
+  }
+
+  Widget _empty(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.people_outline, size: 80, color: Colors.black26),
+            SizedBox(height: 16),
+            Text('まだ見守り対象がいません',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('右下の「見守りを追加」から始めましょう',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addClient(BuildContext context, WidgetRef ref) async {
+    final clients = ref.read(watchedClientsProvider).valueOrNull ?? [];
+    // 無料枠は2人まで。3人目からペイウォール。
+    if (clients.length >= 2) {
+      final purchased = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const PaywallScreen()),
+      );
+      if (purchased != true) return;
+    }
+    if (!context.mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => const PairingIssueScreen(),
+    ));
+    ref.invalidate(watchedClientsProvider);
+  }
+}
+
+class _ClientCard extends StatelessWidget {
+  const _ClientCard({required this.client});
+  final WatchedClient client;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: _Badge(status: client.status),
+        title: Text(client.displayName,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        subtitle: Text(client.status.label,
+            style: TextStyle(
+                fontSize: 16,
+                color: client.status.color,
+                fontWeight: FontWeight.w600)),
+        trailing: const Icon(Icons.chevron_right, size: 28),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ClientDetailScreen(client: client),
+        )),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  const _Badge({required this.status});
+  final ClientStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: status.color.withValues(alpha: 0.15),
+      child: Icon(status.icon, color: status.color, size: 30),
+    );
+  }
+}
