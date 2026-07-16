@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config.dart';
 import '../../core/models/client_status.dart';
 import '../../core/models/watched_client.dart';
 import '../../settings/settings_screen.dart';
@@ -41,29 +42,38 @@ class WatcherHomeScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: clientsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text('読み込みに失敗しました\n$e',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16)),
-            ),
-          ),
-          data: (clients) {
-            if (clients.isEmpty) {
-              return _empty(context);
-            }
-            return RefreshIndicator(
-              onRefresh: () async => ref.invalidate(watchedClientsProvider),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: clients.length,
-                itemBuilder: (_, i) => _ClientCard(client: clients[i]),
+        child: Column(
+          children: [
+            if (AppConfig.isMockActive) const _DemoBanner(),
+            Expanded(
+              child: clientsAsync.when(
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text('読み込みに失敗しました\n$e',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16)),
+                  ),
+                ),
+                data: (clients) {
+                  if (clients.isEmpty) {
+                    return _empty(context);
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () async =>
+                        ref.invalidate(watchedClientsProvider),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: clients.length,
+                      itemBuilder: (_, i) => _ClientCard(client: clients[i]),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -135,6 +145,37 @@ class _ClientCard extends StatelessWidget {
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ClientDetailScreen(client: client),
         )),
+      ),
+    );
+  }
+}
+
+/// モックモード時に一覧上部へ常設表示するデモ案内バナー。
+class _DemoBanner extends StatelessWidget {
+  const _DemoBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFF3CD), // amber系
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: const [
+          Icon(Icons.science, color: Color(0xFF8A6D00), size: 26),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'デモモード（サーバー未接続）\n表示されているのはサンプルデータです',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.3,
+                color: Color(0xFF6B5500),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

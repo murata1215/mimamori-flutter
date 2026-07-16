@@ -19,9 +19,9 @@ class MockApiClient implements ApiClient {
   String? _lastPairCode;
 
   MockApiClient() {
-    // デモ用に見守り対象を2名投入
-    _seed('c-1', 'お母さん', ClientStatus.alive);
-    _seed('c-2', 'お父さん', ClientStatus.watch);
+    // デモ用に見守り対象を2名投入（モックモードでのみ表示されるサンプル）
+    _seed('c-1', '（サンプル）お母さん', ClientStatus.alive);
+    _seed('c-2', '（サンプル）お父さん', ClientStatus.watch);
   }
 
   void _seed(String id, String name, ClientStatus status) {

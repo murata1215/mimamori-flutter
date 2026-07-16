@@ -13,7 +13,7 @@ final prefsProvider = Provider<Prefs>((ref) {
 
 /// API クライアント。モードに応じて Mock / HTTP を切り替える。
 final apiClientProvider = Provider<ApiClient>((ref) {
-  if (AppConfig.useMock || AppConfig.apiBaseUrl.isEmpty) {
+  if (AppConfig.isMockActive) {
     return MockApiClient();
   }
   return HttpApiClient(AppConfig.apiBaseUrl);

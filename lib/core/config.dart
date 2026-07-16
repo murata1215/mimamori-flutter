@@ -8,10 +8,16 @@ class AppConfig {
 
   /// モックモード。サーバー未接続でも全画面を動作確認できる。
   /// 例: flutter run --dart-define=USE_MOCK=true
+  ///
+  /// デフォルトは false。API_BASE_URL 未指定時は下の isMockActive が
+  /// 自動的にモックへフォールバックするため、URL を指定するだけで実サーバー接続になる。
   static const bool useMock = bool.fromEnvironment(
     'USE_MOCK',
-    defaultValue: true,
+    defaultValue: false,
   );
+
+  /// モックモードが有効か（明示指定 or サーバーURL未設定）。
+  static bool get isMockActive => useMock || apiBaseUrl.isEmpty;
 
   /// 同意文言のバージョン（サーバーへ consent_version として記録）。
   static const String consentVersion = 'v1.0';
