@@ -38,11 +38,20 @@ Flutter / Dart / Riverpod / dio / workmanager / MethodChannel(Kotlin) / FCM + fl
 flutter pub get
 
 # サーバー未接続でも全画面を確認できるモックモード
+# （API_BASE_URL を指定しなければ自動的にモックで動作します）
+flutter run
+
+# モックを明示的に強制
 flutter run --dart-define=USE_MOCK=true
 
-# 実サーバーに接続
+# 実サーバーに接続（URL を指定するだけで実サーバー接続になります）
 flutter run --dart-define=API_BASE_URL=https://your-server.example.com
 ```
+
+> **デモモードについて**: サーバー未接続（モックモード）で起動すると、ウォッチャー一覧に
+> 「（サンプル）お母さん / お父さん」のダミーデータと、上部に「デモモード（サーバー未接続）」
+> バナーが表示されます。`--dart-define=API_BASE_URL=...` で実サーバーに接続すると、
+> バナーもサンプルデータも自動的に消えます。
 
 ### FCM（プッシュ通知）を有効化する
 
