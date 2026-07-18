@@ -613,7 +613,13 @@ class HttpApiClient implements ApiClient {
     required String clientId,
   }) async {
     try {
-      await _dio.delete('/v1/clients/$clientId', options: _auth(watcherToken));
+      // dio は DELETE でも Content-Type: application/json を付けるため、
+      // 空ボディだと一部サーバー実装が 400（空JSON拒否）を返す。空 {} を明示送信する。
+      await _dio.delete(
+        '/v1/clients/$clientId',
+        data: const <String, dynamic>{},
+        options: _auth(watcherToken),
+      );
     } on DioException catch (e) {
       // 既に解除済み/存在しない場合の 404 は成功扱い（冪等）。
       if (e.response?.statusCode == 404) return;
