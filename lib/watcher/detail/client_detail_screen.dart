@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/models/client_status.dart';
 import '../../core/models/stamp.dart';
 import '../../core/models/watched_client.dart';
 import '../../core/providers.dart';
+import '../sos/sos_navigation.dart';
 import '../watcher_providers.dart';
 
 /// クライアント詳細画面。
@@ -24,6 +26,11 @@ class ClientDetailScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            // SOS 発報中は最上部に確認導線を出す。
+            if (client.status == ClientStatus.sos) ...[
+              _SosBanner(client: client),
+              const SizedBox(height: 16),
+            ],
             // 現在ステータス
             Container(
               padding: const EdgeInsets.all(24),
@@ -116,6 +123,57 @@ class ClientDetailScreen extends ConsumerWidget {
   String _formatDate(DateTime d) {
     final l = d.toLocal();
     return '${l.month}月${l.day}日 ${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// SOS 発報中に詳細画面上部へ出す赤バナー。タップで SOS 確認画面へ。
+class _SosBanner extends ConsumerWidget {
+  const _SosBanner({required this.client});
+  final WatchedClient client;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final color = ClientStatus.sos.color;
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final resolved =
+              await openSosForClient(context, ref, clientId: client.id);
+          if (resolved) {
+            ref.invalidate(watchedClientsProvider);
+            if (context.mounted) Navigator.of(context).pop();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: const [
+              Icon(Icons.sos, color: Colors.white, size: 40),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SOS が発報されています',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold)),
+                    SizedBox(height: 4),
+                    Text('タップして位置・電池を確認し、対応後に解決してください',
+                        style: TextStyle(color: Colors.white, fontSize: 14)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.white, size: 28),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

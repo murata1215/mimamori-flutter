@@ -19,9 +19,20 @@ class MockApiClient implements ApiClient {
   final Map<String, SosIncident> _sos = {};
 
   MockApiClient() {
-    // デモ用に見守り対象を2名投入（モックモードでのみ表示されるサンプル）
+    // デモ用に見守り対象を投入（モックモードでのみ表示されるサンプル）
     _seed('c-1', '（サンプル）お母さん', ClientStatus.alive);
     _seed('c-2', '（サンプル）お父さん', ClientStatus.watch);
+    // SOS 発報中のサンプル（確認→クリア導線の動作確認用）
+    _seed('c-3', '（サンプル）祖母', ClientStatus.sos);
+    _sos['sos-demo'] = SosIncident(
+      id: 'sos-demo',
+      clientId: 'c-3',
+      clientName: '（サンプル）祖母',
+      latitude: 35.681236,
+      longitude: 139.767125,
+      batteryLevel: 42,
+      firedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+    );
 
     // デモ用スタンプ履歴（ウォッチャー詳細/クライアント受信表示の確認用）
     _clientStamps['c-1'] = [
@@ -300,6 +311,21 @@ class MockApiClient implements ApiClient {
       _delayed(_sos[incidentId]);
 
   @override
+  Future<SosIncident?> getActiveSos({
+    required String watcherToken,
+    required String clientId,
+  }) {
+    SosIncident? active;
+    for (final s in _sos.values) {
+      if (s.clientId == clientId && !s.isResolved) {
+        active = s;
+        break;
+      }
+    }
+    return _delayed(active);
+  }
+
+  @override
   Future<void> resolveSos({
     required String watcherToken,
     required String incidentId,
@@ -316,6 +342,14 @@ class MockApiClient implements ApiClient {
         firedAt: s.firedAt,
         resolvedAt: DateTime.now(),
       );
+      // resolve 後はサーバー同様ステータスを ALIVE に戻す（モック再現）。
+      final c = _clients[s.clientId];
+      if (c != null && c.status == ClientStatus.sos) {
+        _clients[s.clientId] = c.copyWith(
+          status: ClientStatus.alive,
+          statusChangedAt: DateTime.now(),
+        );
+      }
     }
     return _delayed(null);
   }

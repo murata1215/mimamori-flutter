@@ -160,6 +160,14 @@ abstract class ApiClient {
     required String incidentId,
   });
 
+  /// クライアントの現在アクティブ（未解決）な SOS インシデントを取得する。
+  /// FCM 通知を経由せずに一覧/詳細から SOS 画面へ入る導線用。
+  /// アクティブな SOS がなければ null（サーバーは 404）。
+  Future<SosIncident?> getActiveSos({
+    required String watcherToken,
+    required String clientId,
+  });
+
   Future<void> resolveSos({
     required String watcherToken,
     required String incidentId,

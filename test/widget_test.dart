@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 
 import 'package:mimamori_flutter/client/location/location_cache.dart';
 import 'package:mimamori_flutter/core/api/api_client.dart';
+import 'package:mimamori_flutter/core/api/mock_api_client.dart';
 import 'package:mimamori_flutter/core/models/client_status.dart';
 import 'package:mimamori_flutter/core/models/heartbeat.dart';
 import 'package:mimamori_flutter/core/models/sos_incident.dart';
@@ -328,6 +329,66 @@ void main() {
         firedAt: _fixedTime,
       );
       expect(noLoc.hasLocation, isFalse);
+    });
+
+    test('active SOS レスポンス（id / client_name / location_captured_at）をパースする',
+        () {
+      // GET /v1/clients/:id/sos/active の確定レスポンス形。
+      final inc = SosIncident.fromJson(<String, dynamic>{
+        'id': '550e8400-e29b-41d4-a716-446655440000',
+        'client_id': '660e8400-e29b-41d4-a716-446655440001',
+        'client_name': '母',
+        'latitude': 35.68,
+        'longitude': 139.77,
+        'battery_level': 42,
+        'fired_at': '2026-07-18T08:30:00.000Z',
+        'resolved_at': null,
+        'location_captured_at': '2026-07-18T08:25:00.000Z',
+      });
+      expect(inc.id, '550e8400-e29b-41d4-a716-446655440000');
+      expect(inc.clientName, '母');
+      expect(inc.batteryLevel, 42);
+      expect(inc.hasLocation, isTrue);
+      expect(inc.isResolved, isFalse);
+    });
+
+    test('incident_id キー（フォールバック）でも id を取得できる', () {
+      final inc = SosIncident.fromJson(<String, dynamic>{
+        'incident_id': 'inc-1',
+        'battery_level': 10,
+        'fired_at': '2026-07-18T08:30:00.000Z',
+      });
+      expect(inc.id, 'inc-1');
+      expect(inc.clientId, ''); // active 応答に client_id が無い場合の既定
+    });
+  });
+
+  group('MockApiClient SOS 確認→クリア導線', () {
+    test('SOS 発報中のサンプル（c-3）はアクティブ SOS を返す', () async {
+      final api = MockApiClient();
+      final inc = await api.getActiveSos(watcherToken: 't', clientId: 'c-3');
+      expect(inc, isNotNull);
+      expect(inc!.clientId, 'c-3');
+      expect(inc.isResolved, isFalse);
+    });
+
+    test('SOS 未発報のクライアントは null（404 相当）を返す', () async {
+      final api = MockApiClient();
+      final inc = await api.getActiveSos(watcherToken: 't', clientId: 'c-1');
+      expect(inc, isNull);
+    });
+
+    test('resolve 後はアクティブ SOS が消え、ステータスが ALIVE に戻る', () async {
+      final api = MockApiClient();
+      final inc = await api.getActiveSos(watcherToken: 't', clientId: 'c-3');
+      await api.resolveSos(watcherToken: 't', incidentId: inc!.id);
+
+      final after = await api.getActiveSos(watcherToken: 't', clientId: 'c-3');
+      expect(after, isNull);
+
+      final clients = await api.listClients(watcherToken: 't');
+      final c3 = clients.firstWhere((c) => c.id == 'c-3');
+      expect(c3.status, ClientStatus.alive);
     });
   });
 

@@ -550,6 +550,23 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<SosIncident?> getActiveSos({
+    required String watcherToken,
+    required String clientId,
+  }) async {
+    try {
+      final r = await _dio.get(
+        '/v1/clients/$clientId/sos/active',
+        options: _auth(watcherToken),
+      );
+      return SosIncident.fromJson(r.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null; // アクティブSOSなし/権限なし
+      _rethrow(e);
+    }
+  }
+
+  @override
   Future<void> resolveSos({
     required String watcherToken,
     required String incidentId,

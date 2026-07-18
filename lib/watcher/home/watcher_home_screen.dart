@@ -9,6 +9,7 @@ import '../detail/client_detail_screen.dart';
 import '../owner/owner_dashboard_screen.dart';
 import '../pairing/watcher_scan_screen.dart';
 import '../paywall/paywall_screen.dart';
+import '../sos/sos_navigation.dart';
 import '../watcher_providers.dart';
 
 /// ウォッチャーのホーム（クライアント一覧）。
@@ -67,7 +68,11 @@ class WatcherHomeScreen extends ConsumerWidget {
                     child: ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: clients.length,
-                      itemBuilder: (_, i) => _ClientCard(client: clients[i]),
+                      itemBuilder: (_, i) => _ClientCard(
+                        client: clients[i],
+                        onResolved: () =>
+                            ref.invalidate(watchedClientsProvider),
+                      ),
                     ),
                   );
                 },
@@ -122,29 +127,53 @@ class WatcherHomeScreen extends ConsumerWidget {
   }
 }
 
-class _ClientCard extends StatelessWidget {
-  const _ClientCard({required this.client});
+class _ClientCard extends ConsumerWidget {
+  const _ClientCard({required this.client, required this.onResolved});
   final WatchedClient client;
+  final VoidCallback onResolved;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSos = client.status == ClientStatus.sos;
+
+    // SOS のときはカードを強調し、タップで直接 SOS 確認画面へ入れる。
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
+      color: isSos ? client.status.color.withValues(alpha: 0.10) : null,
+      shape: isSos
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: client.status.color, width: 2),
+            )
+          : null,
       child: ListTile(
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         leading: _Badge(status: client.status),
         title: Text(client.displayName,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        subtitle: Text(client.status.label,
+        subtitle: Text(isSos ? 'SOS 発報中 - タップして確認' : client.status.label,
             style: TextStyle(
                 fontSize: 16,
                 color: client.status.color,
                 fontWeight: FontWeight.w600)),
-        trailing: const Icon(Icons.chevron_right, size: 28),
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ClientDetailScreen(client: client),
-        )),
+        trailing: Icon(
+          isSos ? Icons.sos : Icons.chevron_right,
+          size: 28,
+          color: isSos ? client.status.color : null,
+        ),
+        onTap: () async {
+          if (isSos) {
+            final resolved =
+                await openSosForClient(context, ref, clientId: client.id);
+            if (resolved) onResolved();
+            return;
+          }
+          if (!context.mounted) return;
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ClientDetailScreen(client: client),
+          ));
+        },
       ),
     );
   }

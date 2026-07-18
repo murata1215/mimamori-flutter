@@ -59,13 +59,43 @@ class _SosMapScreenState extends ConsumerState<SosMapScreen> {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  bool _resolving = false;
+
   Future<void> _resolve(SosIncident inc) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('SOS を解決済みにしますか？'),
+        content: const Text(
+            '本人の安全を確認できましたか？\n解決すると相手のステータスは「元気です」に戻り、位置情報は削除されます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('解決した'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() => _resolving = true);
     final prefs = ref.read(prefsProvider);
     final token = prefs.watcherToken ?? 'mock-watcher-token';
-    await ref
-        .read(apiClientProvider)
-        .resolveSos(watcherToken: token, incidentId: inc.id);
-    if (mounted) Navigator.of(context).pop();
+    try {
+      await ref
+          .read(apiClientProvider)
+          .resolveSos(watcherToken: token, incidentId: inc.id);
+      if (mounted) Navigator.of(context).pop(true); // 解決済みを呼び出し側へ通知
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _resolving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('解決処理に失敗しました。通信状況をご確認ください。')),
+      );
+    }
   }
 
   @override
@@ -157,9 +187,16 @@ class _SosMapScreenState extends ConsumerState<SosMapScreen> {
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white),
             ),
-            icon: const Icon(Icons.done_all),
+            icon: _resolving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.done_all),
             label: const Text('解決した'),
-            onPressed: () => _resolve(inc),
+            onPressed: _resolving ? null : () => _resolve(inc),
           ),
         ],
       ),

@@ -24,8 +24,10 @@ class SosIncident {
   bool get isResolved => resolvedAt != null;
 
   factory SosIncident.fromJson(Map<String, dynamic> json) => SosIncident(
-        id: json['id'] as String,
-        clientId: json['client_id'] as String,
+        // GET /v1/sos/:id は `id`、GET /v1/clients/:id/sos/active は `incident_id`。
+        id: (json['id'] ?? json['incident_id']) as String,
+        // active エンドポイントは client_id を含まない場合がある。
+        clientId: (json['client_id'] as String?) ?? '',
         clientName: json['client_name'] as String?,
         latitude: (json['latitude'] as num?)?.toDouble(),
         longitude: (json['longitude'] as num?)?.toDouble(),
