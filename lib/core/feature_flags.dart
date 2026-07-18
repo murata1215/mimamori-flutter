@@ -6,7 +6,11 @@ library;
 
 /// きもち（スタンプ）の送受信 UI。
 /// クライアントホームの StampSection / ウォッチャー詳細の _StampPanel を制御する。
-const bool kEnableStamps = false;
+///
+/// 有効化理由（外部レビュー2件の一致指摘）:
+/// 見守られる本人にも「使う理由」を与えるリテンション装置であり、
+/// 同時に本人の能動的な生存イベント（きもち送信）というシグナル源にもなる。
+const bool kEnableStamps = true;
 
 /// クライアント側の SOS 発信 UI。
 /// ホームの SOS 大ボタン（SosButton）を制御する。
@@ -15,6 +19,8 @@ const bool kEnableSosSend = false;
 
 /// 下部アンカーバナー広告（AdMob）。無料利用向け。
 /// 前面ポップアップ（インタースティシャル等）は使わず、下部固定バナーのみ。
+/// 表示対象はウォッチャー側（WatcherShell）のみに限定する。
+/// クライアント（見守られる本人・無償協力者・誤タップの多い高齢者）には表示しない。
 /// 将来 RevenueCat の有料エンタイトルメント保有者は false 相当にして
 /// 広告非表示にする拡張余地あり（AdBannerBar 側で購読状態を見て分岐する）。
 const bool kEnableAds = true;

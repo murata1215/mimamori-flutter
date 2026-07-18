@@ -17,8 +17,9 @@
 - **その他**: mobile_scanner/qr_flutter（ペアリング）、home_widget（SOSウィジェット）、shared_preferences、battery_plus、device_info_plus、url_launcher、permission_handler
 
 ## フィーチャーフラグ（`lib/core/feature_flags.dart`）
-- `kEnableStamps=false` / `kEnableSosSend=false`（UIは隠すがサービス層は温存、true で復活）
-- `kEnableAds=true`（下部バナー広告）
+- `kEnableStamps=true`（きもち＝スタンプ送受信UI。本人に「使う理由」を与え、能動的な生存イベントのシグナル源にもなるため有効化）
+- `kEnableSosSend=false`（SOS発信UIは隠すがサービス層は温存、true で復活）
+- `kEnableAds=true`（下部バナー広告。**表示はウォッチャー側のみ**。見守られる本人＝高齢者には出さない）
 - `kEnableFreeWatchLimit`（無料枠2人制限＋ペイウォール。テスト中は false で無効化。**リリース前に true へ戻す**。サーバー側の 402 制限は watcher.plan で別途制御）
 
 ## 設計原則
