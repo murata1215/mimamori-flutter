@@ -29,7 +29,8 @@
 - ステータス遷移履歴・通知設定
 - 過去3日間の活動量表示（画面をつけた回数・うごきの概算時間・スマホ利用の概算時間。時刻詳細・アプリ名・座標は非開示）
 - SOS の確認と解決（クリア）: 一覧/詳細から発報中のSOSを開き、位置・電池を確認して解決 → ステータスが自動で「生存」に戻る（FCM通知タップ導線と並行）
-- クライアント追加（QR/6桁コード発行、3人目からペイウォール）
+- クライアント追加（QR/6桁コード発行、3人目からペイウォール。`lib/core/feature_flags.dart` の `kEnableFreeWatchLimit` で人数制限を一時無効化可能。サーバー側は watcher の plan で制御）
+  - 招待コード（追加ウォッチャー）読み取りは、まず初回ペアリング（claim）を試し、未知コード（400/404）なら追加見守り（join）へ自動フォールバックする
 - 見守りの解除: 詳細画面から「この人の見守りをやめる」→ 自分の紐づけ（watch_link）のみ削除（相手の一覧から自分の名前が消える）。クライアント側はアプリ起動/復帰時の再取得で「見守ってくれている人がいません」を検知
 - 通知受信（注視=通常 / 警告=全画面+アラーム / SOS=地図直行 / 設定に問題）
 - オーナーダッシュボード骨格（有料プラン）
@@ -40,9 +41,14 @@
   - 既定は Google 公式テスト ID（「Test Ad」表示）。**本番公開前に AdMob 発行 ID の投入が必須**（テスト ID のまま公開は規約違反）。`--dart-define=ADMOB_APP_ID_ANDROID=... --dart-define=ADMOB_BANNER_ANDROID=...` で差し替え可能
 - **有料プラン（RevenueCat）**: API キー投入までスタブ
 
+### デザイン
+
+- 日本語フォントに丸ゴシック **M PLUS Rounded 1c**（Regular/Bold）を同梱（`assets/fonts/`）し、端末依存の明朝フォールバックを回避。高齢者にも読みやすい温かみのあるトーンに統一
+- ウォッチャー一覧カードは白背景 + 左端ステータス色アクセントバー + ピル型ステータス表示。FAB は濃 teal。広告バナーは画面背景色で全幅を埋めて黒帯を防止
+
 ## 技術スタック
 
-Flutter / Dart / Riverpod / dio / workmanager / MethodChannel(Kotlin) / FCM + flutter_local_notifications / geolocator / mobile_scanner / home_widget / google_mobile_ads / RevenueCat(スタブ) ほか。詳細は `CLAUDE.md` を参照。
+Flutter / Dart / Riverpod / dio / workmanager / MethodChannel(Kotlin) / FCM + flutter_local_notifications / geolocator / mobile_scanner / home_widget / google_mobile_ads / RevenueCat(スタブ) / M PLUS Rounded 1c(同梱フォント) ほか。詳細は `CLAUDE.md` を参照。
 
 ## セットアップ
 

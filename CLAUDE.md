@@ -13,7 +13,13 @@
 - **位置情報**: geolocator（SOS時のみ単発取得）
 - **課金**: RevenueCat（`purchases_flutter`、キー投入まではスタブ）
 - **広告**: AdMob（`google_mobile_ads`、無料利用向け下部アンカーバナーのみ。前面ポップアップは使わない。既定は公式テストID、本番IDは `--dart-define` で投入）
+- **フォント**: M PLUS Rounded 1c（丸ゴシック、`assets/fonts/` に同梱・`theme.dart` で全体適用。端末依存の明朝フォールバック回避）
 - **その他**: mobile_scanner/qr_flutter（ペアリング）、home_widget（SOSウィジェット）、shared_preferences、battery_plus、device_info_plus、url_launcher、permission_handler
+
+## フィーチャーフラグ（`lib/core/feature_flags.dart`）
+- `kEnableStamps=false` / `kEnableSosSend=false`（UIは隠すがサービス層は温存、true で復活）
+- `kEnableAds=true`（下部バナー広告）
+- `kEnableFreeWatchLimit`（無料枠2人制限＋ペイウォール。テスト中は false で無効化。**リリース前に true へ戻す**。サーバー側の 402 制限は watcher.plan で別途制御）
 
 ## 設計原則
 - 端末は生存シグナル（ハートビート）を送るだけ。異常判定はサーバー側（デッドマンスイッチ）
