@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'app.dart';
+import 'core/feature_flags.dart';
 import 'core/heartbeat/heartbeat_service.dart';
 import 'core/heartbeat/heartbeat_task.dart';
 import 'core/notifications/fcm_service.dart';
@@ -19,6 +21,13 @@ Future<void> main() async {
 
   // API クライアントは単一インスタンスを生成し、FCM トークン登録と共有する。
   final api = createApiClient(prefs);
+
+  // 広告 SDK 初期化（無料利用向け下部バナー用。失敗しても起動を止めない）
+  if (kEnableAds) {
+    try {
+      unawaited(MobileAds.instance.initialize());
+    } catch (_) {}
+  }
 
   // 通知・FCM・WorkManager を初期化（いずれも失敗しても起動を止めない）
   await LocalNotifications.init();

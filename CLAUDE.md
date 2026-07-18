@@ -12,6 +12,7 @@
 - **プッシュ通知**: FCM（`firebase_messaging`）+ `flutter_local_notifications`（全画面インテント通知）
 - **位置情報**: geolocator（SOS時のみ単発取得）
 - **課金**: RevenueCat（`purchases_flutter`、キー投入まではスタブ）
+- **広告**: AdMob（`google_mobile_ads`、無料利用向け下部アンカーバナーのみ。前面ポップアップは使わない。既定は公式テストID、本番IDは `--dart-define` で投入）
 - **その他**: mobile_scanner/qr_flutter（ペアリング）、home_widget（SOSウィジェット）、shared_preferences、battery_plus、device_info_plus、url_launcher、permission_handler
 
 ## 設計原則

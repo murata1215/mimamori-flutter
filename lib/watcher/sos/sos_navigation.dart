@@ -35,6 +35,8 @@ Future<bool> openSosForClient(
 
     final resolved = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
+        // route 名を付けることで WatcherShell が SOS 表示中と判定し、広告を隠す。
+        settings: const RouteSettings(name: '/watcher/sos'),
         builder: (_) => SosMapScreen(incidentId: inc.id),
       ),
     );

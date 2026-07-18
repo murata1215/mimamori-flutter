@@ -12,3 +12,9 @@ const bool kEnableStamps = false;
 /// ホームの SOS 大ボタン（SosButton）を制御する。
 /// Android ホームウィジェットは AndroidManifest 側で無効化する。
 const bool kEnableSosSend = false;
+
+/// 下部アンカーバナー広告（AdMob）。無料利用向け。
+/// 前面ポップアップ（インタースティシャル等）は使わず、下部固定バナーのみ。
+/// 将来 RevenueCat の有料エンタイトルメント保有者は false 相当にして
+/// 広告非表示にする拡張余地あり（AdBannerBar 側で購読状態を見て分岐する）。
+const bool kEnableAds = true;

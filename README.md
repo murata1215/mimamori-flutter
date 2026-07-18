@@ -32,9 +32,15 @@
 - 通知受信（注視=通常 / 警告=全画面+アラーム / SOS=地図直行 / 設定に問題）
 - オーナーダッシュボード骨格（有料プラン）
 
+### 収益化
+
+- **バナー広告（無料利用向け）**: 画面下部に固定表示するアンカー型アダプティブバナー（AdMob）。前面ポップアップ（インタースティシャル等）は使わない。SOS 画面表示中は非表示。`lib/core/feature_flags.dart` の `kEnableAds` で制御
+  - 既定は Google 公式テスト ID（「Test Ad」表示）。**本番公開前に AdMob 発行 ID の投入が必須**（テスト ID のまま公開は規約違反）。`--dart-define=ADMOB_APP_ID_ANDROID=... --dart-define=ADMOB_BANNER_ANDROID=...` で差し替え可能
+- **有料プラン（RevenueCat）**: API キー投入までスタブ
+
 ## 技術スタック
 
-Flutter / Dart / Riverpod / dio / workmanager / MethodChannel(Kotlin) / FCM + flutter_local_notifications / geolocator / mobile_scanner / home_widget / RevenueCat(スタブ) ほか。詳細は `CLAUDE.md` を参照。
+Flutter / Dart / Riverpod / dio / workmanager / MethodChannel(Kotlin) / FCM + flutter_local_notifications / geolocator / mobile_scanner / home_widget / google_mobile_ads / RevenueCat(スタブ) ほか。詳細は `CLAUDE.md` を参照。
 
 ## セットアップ
 

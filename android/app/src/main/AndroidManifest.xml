@@ -39,6 +39,13 @@
         android:label="みまもり"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- AdMob アプリ ID（無料利用向け下部バナー用）。
+             既定は Google 公式テスト ID。本番公開前に AdMob 発行 ID に差し替えること。 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
