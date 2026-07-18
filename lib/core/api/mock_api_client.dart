@@ -386,6 +386,17 @@ class MockApiClient implements ApiClient {
     return _delayed(null);
   }
 
+  @override
+  Future<void> unwatchClient({
+    required String watcherToken,
+    required String clientId,
+  }) {
+    // 見守り紐づけを解除＝一覧から除去（モックでは client レコードごと消す再現）。
+    _clients.remove(clientId);
+    _history.remove(clientId);
+    return _delayed(null);
+  }
+
   // --- スタンプ（インメモリ） ---
   final Map<String, List<Stamp>> _clientStamps = {};
   final List<Stamp> _myStamps = [];

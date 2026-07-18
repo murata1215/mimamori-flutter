@@ -123,10 +123,73 @@ class ClientDetailScreen extends ConsumerWidget {
                 );
               },
             ),
+
+            const SizedBox(height: 40),
+            // 見守りをやめる（自分の watch_link を解除）。
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFD32F2F),
+                  side: const BorderSide(color: Color(0xFFD32F2F)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                icon: const Icon(Icons.person_remove_alt_1),
+                label: const Text('この人の見守りをやめる',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: () => _confirmAndUnwatch(context, ref),
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmAndUnwatch(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${client.displayName}さんの見守りをやめますか？'),
+        content: const Text(
+          '相手の一覧からあなたの名前が消えます。\n'
+          'この操作は取り消せません（もう一度見守るには再ペアリングが必要です）。',
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFFD32F2F)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('見守りをやめる'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
+    final prefs = ref.read(prefsProvider);
+    final token = prefs.watcherToken ?? 'mock-watcher-token';
+    try {
+      await ref
+          .read(apiClientProvider)
+          .unwatchClient(watcherToken: token, clientId: client.id);
+      ref.invalidate(watchedClientsProvider);
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // 詳細画面を閉じて一覧へ戻る
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('見守りをやめました')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('見守りの解除に失敗しました。通信状況をご確認ください。')),
+      );
+    }
   }
 
   String _formatDate(DateTime d) {

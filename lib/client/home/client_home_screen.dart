@@ -202,9 +202,13 @@ class _WatchersList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 見守っている人の名前のみ表示（最小開示）。取得失敗時は汎用表示にフォールバック。
+    // 見守っている人の名前のみ表示（最小開示）。
+    // - 取得成功で0人 → 「見守ってくれている人がいません」警告
+    // - 取得失敗（null）→ 汎用フォールバック（通信不良でも不安にさせない）
     final watchersAsync = ref.watch(myWatchersProvider);
     final names = watchersAsync.valueOrNull;
+    // 取得に成功し、かつ0人のとき（＝ウォッチャー側が解除した等）。
+    final noWatchers = watchersAsync.hasValue && (names?.isEmpty ?? true);
 
     final List<Widget> cards;
     if (names != null && names.isNotEmpty) {
@@ -216,6 +220,27 @@ class _WatchersList extends ConsumerWidget {
                 ),
               ))
           .toList();
+    } else if (noWatchers) {
+      cards = const [
+        Card(
+          color: Color(0xFFFFF3E0),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Color(0xFFEF6C00), size: 32),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'いま見守ってくれている人がいません。\n下の「見守る人を追加」から登録してください。',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
     } else {
       cards = const [
         Card(

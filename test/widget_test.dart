@@ -393,6 +393,25 @@ void main() {
     });
   });
 
+  group('MockApiClient 見守り解除', () {
+    test('unwatchClient で対象クライアントが一覧から消える', () async {
+      final api = MockApiClient();
+      final before = await api.listClients(watcherToken: 't');
+      expect(before.any((c) => c.id == 'c-1'), isTrue);
+
+      await api.unwatchClient(watcherToken: 't', clientId: 'c-1');
+
+      final after = await api.listClients(watcherToken: 't');
+      expect(after.any((c) => c.id == 'c-1'), isFalse);
+    });
+
+    test('存在しないクライアントの解除でも例外を投げない（冪等）', () async {
+      final api = MockApiClient();
+      await api.unwatchClient(watcherToken: 't', clientId: 'no-such-id');
+      // 例外が飛ばなければ成功。
+    });
+  });
+
   group('DailyActivity 活動量', () {
     test('fromJson が集計フィールドをパースする', () {
       final a = DailyActivity.fromJson(const {

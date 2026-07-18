@@ -608,6 +608,20 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<void> unwatchClient({
+    required String watcherToken,
+    required String clientId,
+  }) async {
+    try {
+      await _dio.delete('/v1/clients/$clientId', options: _auth(watcherToken));
+    } on DioException catch (e) {
+      // 既に解除済み/存在しない場合の 404 は成功扱い（冪等）。
+      if (e.response?.statusCode == 404) return;
+      _rethrow(e);
+    }
+  }
+
+  @override
   Future<String> sendStampAsClient({
     required String clientToken,
     required String stamp,

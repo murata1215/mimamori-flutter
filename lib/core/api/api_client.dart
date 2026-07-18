@@ -183,6 +183,14 @@ abstract class ApiClient {
     required String incidentId,
   });
 
+  /// 自分（このウォッチャー）の見守り紐づけ（watch_link）を解除する。
+  /// client レコードや他ウォッチャーの紐づけには影響しない。
+  /// サーバーが既に解除済み等で 404 を返しても成功扱い（冪等）。
+  Future<void> unwatchClient({
+    required String watcherToken,
+    required String clientId,
+  });
+
   // --- スタンプ（きもちの双方向やり取り。メッセージ機能はなし） ---
   /// クライアント → 全ウォッチャーへスタンプ送信。stamp_id を返す。
   Future<String> sendStampAsClient({
