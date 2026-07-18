@@ -51,7 +51,9 @@ dependencies:
   geolocator: ^13.0.2
 
   # QR scan / pairing
-  mobile_scanner: ^5.2.3
+  # v7 系: iOS の GoogleUtilities 8.x（firebase_messaging 15.x と共通）に対応。
+  # v5 は GoogleUtilities <8.0 を要求し firebase_messaging と競合するため不可。
+  mobile_scanner: ^7.0.0
   qr_flutter: ^4.1.0
 
   # Billing (RevenueCat) - stubbed until keys provided
