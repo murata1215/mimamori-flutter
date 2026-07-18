@@ -75,9 +75,20 @@ flutter run --dart-define=API_BASE_URL=https://your-server.example.com
 
 ### FCM（プッシュ通知）を有効化する
 
+クライアント／サーバーとも通知の実装は完了済み。有効化はキー投入のみで済む。
+
+**クライアント側**（Firebase プロジェクト `mimamori-92060` 設定済み）
 1. Firebase Console でプロジェクト作成 → Android アプリ登録（パッケージ名 `com.devrelay.mimamori_flutter`）
-2. `google-services.json` をダウンロードして `android/app/` に配置
+2. `google-services.json` をダウンロードして `android/app/` に配置（gitignore 対象・コミットされない）
 3. `flutter run` し直すだけで有効になる（未配置でもアプリは起動します）
+   - 起動時に FCM トークンを `PUT /v1/devices/me/fcm-token`（ウォッチャーは `/v1/watchers/me/fcm-token`）へ自動登録。`onTokenRefresh` でも再登録
+
+**サーバー側**（FCM 送信は実装済み）
+1. Firebase Console → プロジェクト設定 → サービスアカウント → 「新しい秘密鍵の生成」で JSON を発行（秘密鍵。リポジトリには置かない）
+2. サーバーに配置し `.env` に `FIREBASE_CREDENTIALS_PATH=<パス>` を設定 → 再起動
+3. ログに `[fcm] Firebase Admin SDK を初期化しました` が出れば成功
+
+> 詳細な手順・kind 別ルーティング・疎通テスト手順は `.devrelay-output/mimamori-fcm-setup.md` を参照。
 
 ### 課金（RevenueCat）
 
@@ -98,4 +109,4 @@ flutter build apk   # Android APK
 
 ## ステータス
 
-Phase 1（スマホのみ・個人向け）実装済み。サーバー実装・Firebase/RevenueCat 本番キー投入後に結合テスト予定。
+Phase 1（スマホのみ・個人向け）実装済み。Firebase プロジェクト（`mimamori-92060`）作成・`google-services.json` 配置済み。サーバーへの Firebase Admin SDK 秘密鍵投入・RevenueCat 本番キー投入後に結合テスト予定。

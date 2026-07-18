@@ -38,6 +38,6 @@ flutter analyze      # 静的解析
 ```
 
 ## セットアップ注意
-- **FCM**: `android/app/google-services.json` を配置すると自動で有効化（未配置でも起動可）
+- **FCM**: Firebase プロジェクト `mimamori-92060`（package `com.devrelay.mimamori_flutter`）作成済み。`android/app/google-services.json` を配置すると自動で有効化（gitignore 対象・未配置でも起動可）。起動時に FCM トークンを `PUT /v1/devices/me/fcm-token`（watcher は `/v1/watchers/me/fcm-token`）へ自動登録。サーバー送信は実装済みで、Admin SDK 秘密鍵を `.env` の `FIREBASE_CREDENTIALS_PATH` で投入して有効化する
 - **RevenueCat**: API キー投入までは購入処理はスタブ
 - **minSdk**: 26（Android 8.0以上）
