@@ -8,7 +8,7 @@
 - **状態管理**: Riverpod (`flutter_riverpod`)
 - **HTTP**: dio（`ApiClient` 抽象 → `HttpApiClient` / `MockApiClient` 切替）
 - **バックグラウンド**: workmanager（15分周期ハートビート）
-- **ネイティブ連携**: MethodChannel（Kotlin: UsageStats・SCREEN_ON・電池最適化除外・OEMガイド）
+- **ネイティブ連携**: ローカルプラグイン `packages/mimamori_native`（MethodChannel `mimamori/native`、Kotlin: UsageStats・SCREEN_ON・電池最適化除外・OEMガイド）。**プラグイン化により WorkManager のバックグラウンド isolate にも自動登録され、アプリ未起動時のハートビートでも生存イベント（画面点灯回数・前面アプリ利用）を取得できる**（旧: MainActivity 直登録だとバックグラウンドで常に 0/false になるバグがあった）
 - **プッシュ通知**: FCM（`firebase_messaging`）+ `flutter_local_notifications`（全画面インテント通知）
 - **位置情報**: geolocator（SOS時のみ単発取得）
 - **課金**: RevenueCat（`purchases_flutter`、キー投入まではスタブ）

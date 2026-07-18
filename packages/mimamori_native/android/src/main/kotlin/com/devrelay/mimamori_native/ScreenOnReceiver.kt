@@ -1,4 +1,4 @@
-package com.devrelay.mimamori_flutter
+package com.devrelay.mimamori_native
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +10,7 @@ import android.content.IntentFilter
  * 画面点灯は「本人が端末に触れている」生存シグナルの近似。
  *
  * SCREEN_ON はマニフェスト宣言では受信できないため、
- * プロセス生存中は動的登録する（アプリ起動時 / BOOT_COMPLETED 時）。
+ * プロセス生存中は動的登録する（プラグイン attach 時 / BOOT_COMPLETED 時）。
  */
 class ScreenOnReceiver : BroadcastReceiver() {
 

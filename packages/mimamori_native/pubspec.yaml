@@ -1,0 +1,23 @@
+name: mimamori_native
+description: >-
+  みまもりのネイティブ連携（UsageStats / SCREEN_ON カウント / 電池最適化除外 /
+  OEM 自動起動ガイド）を担うローカルプラグイン。宣言済みプラグインとして
+  WorkManager のバックグラウンド isolate にも自動登録され、アプリ未起動時でも
+  生存イベント（画面点灯回数・前面アプリ利用の有無）を取得できる。
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.devrelay.mimamori_native
+        pluginClass: MimamoriNativePlugin

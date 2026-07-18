@@ -1,4 +1,4 @@
-package com.devrelay.mimamori_flutter
+package com.devrelay.mimamori_native
 
 import android.content.Context
 

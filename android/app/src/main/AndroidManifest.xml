@@ -71,19 +71,9 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- SCREEN_ON をカウントする常駐レシーバ (生存イベント収集) -->
-        <receiver
-            android:name=".ScreenOnReceiver"
-            android:exported="false"/>
-
-        <!-- 端末再起動時にレシーバ登録を再開 -->
-        <receiver
-            android:name=".BootReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
+        <!-- SCREEN_ON カウント / BOOT_COMPLETED 再登録レシーバは
+             ローカルプラグイン mimamori_native のマニフェストで宣言・マージされる
+             （com.devrelay.mimamori_native.ScreenOnReceiver / BootReceiver）。 -->
 
         <!-- SOS ホームウィジェット (2x2) -->
         <!-- Phase 1 では SOS 発信 UI を隠すため無効化（コード・レイアウトは温存）。

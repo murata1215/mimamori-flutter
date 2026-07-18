@@ -33,6 +33,12 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
+  # ネイティブ連携（UsageStats / SCREEN_ON / 電池最適化除外 / OEM ガイド）。
+  # ローカルプラグイン化することで WorkManager のバックグラウンド isolate にも
+  # 自動登録され、アプリ未起動時のハートビートでも生存イベントを取得できる。
+  mimamori_native:
+    path: packages/mimamori_native
+
   # State management
   flutter_riverpod: ^2.6.1
 

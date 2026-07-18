@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- SCREEN_ON をカウントする常駐レシーバ（生存イベント収集）。
+             動的登録が基本だが、マニフェスト宣言も残す。 -->
+        <receiver
+            android:name=".ScreenOnReceiver"
+            android:exported="false"/>
+
+        <!-- 端末再起動時に SCREEN_ON レシーバ登録を再開する -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
