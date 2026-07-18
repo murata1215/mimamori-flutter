@@ -1,6 +1,8 @@
 import Flutter
 import UIKit
-import workmanager
+// workmanager プラグインの iOS モジュール名は workmanager_apple
+// （workmanager_apple.modulemap で framework module として定義）。
+import workmanager_apple
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {

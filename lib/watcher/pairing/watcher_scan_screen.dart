@@ -115,12 +115,45 @@ class _WatcherScanScreenState extends ConsumerState<WatcherScanScreen> {
                   height: 280,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: MobileScanner(
-                      controller: _scanner ??= MobileScannerController(),
-                      onDetect: (capture) {
-                        final code = capture.barcodes.firstOrNull?.rawValue;
-                        if (code != null && !_busy) _claim(code);
-                      },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        MobileScanner(
+                          controller: _scanner ??= MobileScannerController(),
+                          onDetect: (capture) {
+                            // 名前未入力のうちは黙って無視（SnackBar 連発を防ぐ）。
+                            // 誘導は下のオーバーレイで常時表示する。
+                            if (_busy) return;
+                            if (_nameCtrl.text.trim().isEmpty) return;
+                            final code = capture.barcodes.firstOrNull?.rawValue;
+                            if (code != null) _claim(code);
+                          },
+                        ),
+                        // 名前未入力の間は半透明オーバーレイでスキャンをブロック＋誘導。
+                        ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _nameCtrl,
+                          builder: (context, value, _) {
+                            if (value.text.trim().isNotEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Container(
+                              color: Colors.black54,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(24),
+                              child: const Text(
+                                '先に上の欄に\n「見守る人のお名前」を\n入力してください',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  height: 1.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
