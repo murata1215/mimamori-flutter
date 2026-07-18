@@ -1,22 +1,22 @@
 /// アプリ全体の設定値。ビルド時に --dart-define で上書き可能。
 class AppConfig {
-  /// API のベース URL。未指定時は空（モックモードを推奨）。
+  /// API のベース URL。本番サーバーを既定値として固定する。
+  /// `flutter run` だけで実サーバー接続になる。
+  /// 別サーバーへ向けたい場合のみ `--dart-define=API_BASE_URL=...` で上書き可能。
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://mimamori-server.devrelay.io',
   );
 
   /// モックモード。サーバー未接続でも全画面を動作確認できる。
-  /// 例: flutter run --dart-define=USE_MOCK=true
-  ///
-  /// デフォルトは false。API_BASE_URL 未指定時は下の isMockActive が
-  /// 自動的にモックへフォールバックするため、URL を指定するだけで実サーバー接続になる。
+  /// 明示指定したときのみ有効: flutter run --dart-define=USE_MOCK=true
   static const bool useMock = bool.fromEnvironment(
     'USE_MOCK',
     defaultValue: false,
   );
 
-  /// モックモードが有効か（明示指定 or サーバーURL未設定）。
+  /// モックモードが有効か（USE_MOCK 明示指定 or サーバーURL未設定）。
+  /// apiBaseUrl は既定で本番URLが入るため、通常は useMock のみで判定される。
   static bool get isMockActive => useMock || apiBaseUrl.isEmpty;
 
   /// 同意文言のバージョン（サーバーへ consent_version として記録）。

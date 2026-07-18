@@ -90,6 +90,22 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+  # App launcher icon generator（アイコン差し替え時に `dart run flutter_launcher_icons`）
+  flutter_launcher_icons: ^0.14.1
+
+# アプリアイコン設定（Android / iOS）。
+# iOS アイコンは Mac 上で `dart run flutter_launcher_icons` を実行して生成する。
+# adaptive_icon_background は元画像のクリーム背景 #FEF6E7 に合わせている。
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#FEF6E7"
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#FEF6E7"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 26
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

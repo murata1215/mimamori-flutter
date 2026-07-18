@@ -11,12 +11,19 @@ final prefsProvider = Provider<Prefs>((ref) {
   throw UnimplementedError('prefsProvider must be overridden in main()');
 });
 
-/// API クライアント。モードに応じて Mock / HTTP を切り替える。
-final apiClientProvider = Provider<ApiClient>((ref) {
+/// API クライアントを生成する。モードに応じて Mock / HTTP を切り替える。
+/// HTTP 版は Prefs を受け取り、401 時のトークン自動リフレッシュに使う。
+ApiClient createApiClient(Prefs prefs) {
   if (AppConfig.isMockActive) {
     return MockApiClient();
   }
-  return HttpApiClient(AppConfig.apiBaseUrl);
+  return HttpApiClient(AppConfig.apiBaseUrl, prefs: prefs);
+}
+
+/// API クライアント。モードに応じて Mock / HTTP を切り替える。
+/// main() で単一インスタンスを override する（FcmService と共有するため）。
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return createApiClient(ref.watch(prefsProvider));
 });
 
 /// 現在のアクティブロール。

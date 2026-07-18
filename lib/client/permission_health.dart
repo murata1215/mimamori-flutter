@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -31,20 +33,29 @@ class PermissionHealth {
     return list;
   }
 
-  Map<String, bool> toApiMap() => {
-        'notification': notification,
-        'usage_access': usageAccess,
-        'battery_optimized': batteryOptimized,
-        'location': location,
-      };
+  /// 失効している権限をサーバー enum の文字列配列で返す。
+  /// サーバー許容値: usage_stats / battery_optimization / notification / location。
+  List<String> toApiIssues() {
+    final issues = <String>[];
+    if (!usageAccess) issues.add('usage_stats');
+    if (!batteryOptimized) issues.add('battery_optimization');
+    if (!notification) issues.add('notification');
+    if (!location) issues.add('location');
+    return issues;
+  }
 
   static Future<PermissionHealth> check() async {
     final notif = await Permission.notification.isGranted;
-    final usage = await NativeBridge.isUsageAccessGranted();
-    final battery = await NativeBridge.isIgnoringBatteryOptimizations();
+    // 使用状況アクセス・電池最適化除外は Android 固有。iOS には概念がないため
+    // 常に健全（true）扱いとし、ウォッチャー側に不要な「設定に問題」を出さない。
+    final isAndroid = Platform.isAndroid;
+    final usage = isAndroid ? await NativeBridge.isUsageAccessGranted() : true;
+    final battery =
+        isAndroid ? await NativeBridge.isIgnoringBatteryOptimizations() : true;
+    // 活動量シグナル（バックグラウンドの位置キャッシュ）には「常に許可」が必要。
+    // whileInUse だと前面時しか取得できず、15分周期ハートビートで位置が拾えない。
     final loc = await Geolocator.checkPermission();
-    final locOk = loc == LocationPermission.always ||
-        loc == LocationPermission.whileInUse;
+    final locOk = loc == LocationPermission.always;
 
     return PermissionHealth(
       notification: notif,

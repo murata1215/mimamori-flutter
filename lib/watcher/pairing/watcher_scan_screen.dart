@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../core/config.dart';
+import '../../core/api/api_client.dart';
 import '../../core/providers.dart';
-import 'permission_wizard_screen.dart';
 
-/// ペアリング画面。
-/// ウォッチャーが発行した QR コードをスキャン、または6桁コードを入力する。
-class PairingScreen extends ConsumerStatefulWidget {
-  const PairingScreen({super.key});
+/// 逆方向ペアリングのウォッチャー（見守る側）画面。
+///
+/// 見守る相手の名前を入力し、相手の端末に表示された QR を読み取る
+/// （読めない場合は6桁コードを手入力）。
+///
+/// QR は「初回ペアリング（claim）」と「追加見守り（join）」の2種類があるが、
+/// ウォッチャーの操作は同じ。まず claim を試し、コードが該当しなければ join に
+/// フォールバックする（既存 APK が出す QR との互換も保つ）。
+class WatcherScanScreen extends ConsumerStatefulWidget {
+  const WatcherScanScreen({super.key});
 
   @override
-  ConsumerState<PairingScreen> createState() => _PairingScreenState();
+  ConsumerState<WatcherScanScreen> createState() => _WatcherScanScreenState();
 }
 
-class _PairingScreenState extends ConsumerState<PairingScreen> {
+class _WatcherScanScreenState extends ConsumerState<WatcherScanScreen> {
   bool _manual = false;
   bool _busy = false;
   final _codeCtrl = TextEditingController();
@@ -30,44 +35,61 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
     super.dispose();
   }
 
-  Future<void> _pair(String code) async {
+  Future<void> _claim(String rawCode) async {
     if (_busy) return;
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      _snack('お名前を入力してください');
+      _snack('見守る人のお名前を入力してください');
       return;
     }
+    final code = rawCode.trim();
+    if (code.isEmpty) return;
     setState(() => _busy = true);
+    final api = ref.read(apiClientProvider);
+    final token = ref.read(prefsProvider).watcherToken ?? 'mock-watcher-token';
     try {
-      final api = ref.read(apiClientProvider);
-      final result = await api.pairClient(
-        code: code.trim(),
-        displayName: name,
-        consentVersion: AppConfig.consentVersion,
-      );
-      final prefs = ref.read(prefsProvider);
-      await prefs.setClientId(result.clientId);
-      await prefs.setClientToken(result.deviceToken);
+      try {
+        // まず初回ペアリング（新規クライアント）として登録を試みる。
+        await api.claimClient(
+            watcherToken: token, code: code, displayName: name);
+      } on ApiException catch (e) {
+        // claim コードでない（404）＝追加見守りの招待コード → join にフォールバック。
+        if (e.statusCode == 404) {
+          await api.joinClient(
+              watcherToken: token, code: code, displayName: name);
+        } else {
+          rethrow;
+        }
+      }
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const PermissionWizardScreen()),
-      );
-    } catch (e) {
-      _snack('ペアリングに失敗しました。コードをご確認ください。');
+      Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 409) {
+        _snack('この人はすでに見守り登録されています');
+      } else if (e.statusCode == 402) {
+        _snack('無料で見守れる人数の上限に達しています');
+      } else {
+        _snack('登録に失敗しました。コードをご確認ください。');
+      }
+      setState(() => _busy = false);
+    } catch (_) {
+      if (!mounted) return;
+      _snack('登録に失敗しました。コードをご確認ください。');
       setState(() => _busy = false);
     }
   }
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg, style: const TextStyle(fontSize: 16))));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg, style: const TextStyle(fontSize: 16))));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('見守る人とつなぐ')),
+      appBar: AppBar(title: const Text('見守りを追加')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -78,14 +100,15 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 controller: _nameCtrl,
                 style: const TextStyle(fontSize: 20),
                 decoration: const InputDecoration(
-                  labelText: 'あなたのお名前',
+                  labelText: '見守る人のお名前',
                   labelStyle: TextStyle(fontSize: 18),
+                  helperText: '例: お母さん',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 24),
               if (!_manual) ...[
-                const Text('見守る人の画面のQRコードを写してください',
+                const Text('見守られる人のスマホに表示された\nQRコードを写してください',
                     style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -96,7 +119,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                       controller: _scanner ??= MobileScannerController(),
                       onDetect: (capture) {
                         final code = capture.barcodes.firstOrNull?.rawValue;
-                        if (code != null && !_busy) _pair(code);
+                        if (code != null && !_busy) _claim(code);
                       },
                     ),
                   ),
@@ -108,7 +131,7 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                   label: const Text('6桁コードを入力する'),
                 ),
               ] else ...[
-                const Text('見守る人から聞いた6桁の番号を入力してください',
+                const Text('相手の画面に出ている6桁の番号を入力してください',
                     style: TextStyle(fontSize: 18)),
                 const SizedBox(height: 16),
                 TextField(
@@ -124,14 +147,14 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _busy ? null : () => _pair(_codeCtrl.text),
+                  onPressed: _busy ? null : () => _claim(_codeCtrl.text),
                   child: _busy
                       ? const SizedBox(
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('つなぐ'),
+                      : const Text('登録する'),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(

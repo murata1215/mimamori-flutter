@@ -2,6 +2,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart' show PackageInfo;
 
+import '../../client/location/location_cache.dart';
 import '../api/api_client.dart';
 import '../api/http_api_client.dart';
 import '../api/mock_api_client.dart';
@@ -26,7 +27,7 @@ class HeartbeatService {
       final token = prefs.clientToken;
       if (token == null) return; // 未ペアリングなら何もしない
 
-      final beat = await _collect();
+      final beat = await _collect(prefs);
 
       final queue = HeartbeatQueue();
       final api = _buildApi();
@@ -61,10 +62,15 @@ class HeartbeatService {
   }
 
   /// 生存イベントを収集。
-  /// プライバシー原則: screen_on_count / had_app_usage(bool) / battery のみ。
-  static Future<Heartbeat> _collect() async {
+  /// プライバシー原則: screen_on_count / had_app_usage(bool) / had_movement(bool) /
+  /// battery のみ。座標は送らない（位置は端末内キャッシュのみ、送信は SOS 時だけ）。
+  static Future<Heartbeat> _collect(Prefs prefs) async {
     final screenOn = await NativeBridge.getScreenOnCount();
     final hadUsage = await NativeBridge.hasRecentAppUsage(windowMinutes: 15);
+
+    // 位置を端末内にキャッシュし、移動有無（boolean）だけを取り出す。
+    // 権限なし・測位失敗なら null（サーバーへ送らない）。
+    final hadMovement = await LocationCache.captureAndCache(prefs);
 
     int battery = 0;
     try {
@@ -82,6 +88,7 @@ class HeartbeatService {
       batteryLevel: battery,
       screenOnCount: screenOn,
       hadAppUsage: hadUsage,
+      hadMovement: hadMovement,
       appVersion: version,
     );
   }

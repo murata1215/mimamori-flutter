@@ -21,9 +21,9 @@
 
 ## 開発コマンド
 ```bash
-flutter run          # デバッグ実行（接続デバイス/エミュレータ）
+flutter run          # デバッグ実行（既定で本番サーバー https://mimamori-server.devrelay.io に接続）
 flutter run --dart-define=USE_MOCK=true            # モックモード（サーバー未接続で全画面確認）
-flutter run --dart-define=API_BASE_URL=https://... # 実サーバー接続
+flutter run --dart-define=API_BASE_URL=https://... # 接続先サーバーを上書き（既定は本番URL）
 flutter build apk    # Android APK ビルド
 flutter test         # テスト実行
 flutter analyze      # 静的解析

@@ -66,5 +66,28 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 位置情報: 見守り（活動量シグナル）と SOS のため。座標が家族に送られるのは SOS の時だけ -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>お元気かどうかの確認とSOSのために位置情報を使います。居場所がご家族に送られるのはSOSのときだけです。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>アプリを開いていないときも見守りを続けるために「常に許可」が必要です。居場所がご家族に送られるのはSOSのときだけです。</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>アプリを開いていないときも見守りを続けるために位置情報を使います。居場所がご家族に送られるのはSOSのときだけです。</string>
+	<!-- カメラ: QRコードでの見守り開始（ペアリング）のため -->
+	<key>NSCameraUsageDescription</key>
+	<string>見守りを始めるためのQRコードを読み取るときにカメラを使います。</string>
+	<!-- バックグラウンドでの生存シグナル送信・SOS・プッシュ通知のため -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+		<string>location</string>
+	</array>
+	<!-- workmanager の BGTaskScheduler 識別子（heartbeat_task.dart と一致させる） -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>mimamori.heartbeat.periodic</string>
+	</array>
 </dict>
 </plist>

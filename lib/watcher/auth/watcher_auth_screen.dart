@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/notifications/fcm_service.dart';
 import '../../core/providers.dart';
 import '../watcher_shell.dart';
 
@@ -32,7 +33,7 @@ class _WatcherAuthScreenState extends ConsumerState<WatcherAuthScreen> {
     setState(() => _busy = true);
     try {
       final api = ref.read(apiClientProvider);
-      final token = _isRegister
+      final auth = _isRegister
           ? await api.registerWatcher(
               email: _email.text.trim(),
               password: _password.text,
@@ -42,7 +43,17 @@ class _WatcherAuthScreenState extends ConsumerState<WatcherAuthScreen> {
               email: _email.text.trim(),
               password: _password.text,
             );
-      await ref.read(prefsProvider).setWatcherToken(token);
+      final prefs = ref.read(prefsProvider);
+      await prefs.setWatcherToken(auth.accessToken);
+      await prefs.setWatcherRefreshToken(auth.refreshToken);
+      await prefs.setWatcherId(auth.watcherId);
+      // メールで登録/ログインした = メール登録済みアカウント（設定画面の表示用）。
+      await prefs.setWatcherEmailRegistered(true);
+      if (_name.text.trim().isNotEmpty) {
+        await prefs.setWatcherDisplayName(_name.text.trim());
+      }
+      // ウォッチャーの FCM トークンをサーバーへ登録（失敗しても続行）
+      await FcmService.syncToken();
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const WatcherShell()),

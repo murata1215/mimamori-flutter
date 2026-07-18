@@ -7,6 +7,7 @@ class WatchedClient {
   final String displayName;
   final ClientStatus status;
   final DateTime? statusChangedAt;
+  final bool hasIssue; // 権限失効など設定に問題がある（サーバー: has_issue）
   final String? propertyTag; // オーナープラン: 物件グルーピング
 
   const WatchedClient({
@@ -14,6 +15,7 @@ class WatchedClient {
     required this.displayName,
     required this.status,
     this.statusChangedAt,
+    this.hasIssue = false,
     this.propertyTag,
   });
 
@@ -25,6 +27,7 @@ class WatchedClient {
       statusChangedAt: json['status_changed_at'] != null
           ? DateTime.tryParse(json['status_changed_at'] as String)
           : null,
+      hasIssue: (json['has_issue'] as bool?) ?? false,
       propertyTag: json['property_tag'] as String?,
     );
   }
@@ -35,6 +38,7 @@ class WatchedClient {
       displayName: displayName,
       status: status ?? this.status,
       statusChangedAt: statusChangedAt ?? this.statusChangedAt,
+      hasIssue: hasIssue,
       propertyTag: propertyTag,
     );
   }
@@ -54,9 +58,11 @@ class StatusTransition {
 
   factory StatusTransition.fromJson(Map<String, dynamic> json) {
     return StatusTransition(
+      // サーバーは from が null（初回遷移）を返すことがある → unknown 扱い。
       from: ClientStatus.fromApi(json['from'] as String?),
       to: ClientStatus.fromApi(json['to'] as String?),
-      at: DateTime.parse(json['at'] as String),
+      // サーバーのフィールド名は changed_at。
+      at: DateTime.parse(json['changed_at'] as String),
     );
   }
 }

@@ -48,6 +48,7 @@ app.*.map.json
 .devrelay/
 .devrelay-files/
 .devrelay-output/
+.devrelay-output-history/
 
 # Firebase secret config (place locally to enable FCM)
 /android/app/google-services.json

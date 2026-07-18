@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/models/stamp.dart';
 import '../core/models/watched_client.dart';
 import '../core/providers.dart';
 
@@ -20,4 +21,13 @@ final statusHistoryProvider = FutureProvider.autoDispose
   final prefs = ref.watch(prefsProvider);
   final token = prefs.watcherToken ?? 'mock-watcher-token';
   return api.statusHistory(watcherToken: token, clientId: clientId);
+});
+
+/// 指定クライアントとの双方向スタンプ履歴（新しい順）。
+final stampHistoryProvider = FutureProvider.autoDispose
+    .family<List<Stamp>, String>((ref, clientId) async {
+  final api = ref.watch(apiClientProvider);
+  final prefs = ref.watch(prefsProvider);
+  final token = prefs.watcherToken ?? 'mock-watcher-token';
+  return api.listClientStamps(watcherToken: token, clientId: clientId);
 });

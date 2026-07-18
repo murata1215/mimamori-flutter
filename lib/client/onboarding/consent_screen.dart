@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config.dart';
 import '../../core/models/client_status.dart';
 import '../../core/providers.dart';
-import 'pairing_screen.dart';
+import 'client_qr_screen.dart';
 
 /// 同意フロー（スキップ不可）。
 /// 図解2枚で「見えるのは4つの状態だけ」「位置はSOS時だけ」を明示し、
@@ -85,7 +85,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     await prefs.setConsent(AppConfig.consentVersion, DateTime.now());
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const PairingScreen()),
+      MaterialPageRoute(builder: (_) => const ClientQrScreen()),
     );
   }
 }

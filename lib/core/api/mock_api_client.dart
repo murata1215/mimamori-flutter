@@ -4,6 +4,7 @@ import 'dart:math';
 import '../models/client_status.dart';
 import '../models/heartbeat.dart';
 import '../models/sos_incident.dart';
+import '../models/stamp.dart';
 import '../models/watched_client.dart';
 import 'api_client.dart';
 
@@ -16,12 +17,36 @@ class MockApiClient implements ApiClient {
   final Map<String, WatchedClient> _clients = {};
   final Map<String, List<StatusTransition>> _history = {};
   final Map<String, SosIncident> _sos = {};
-  String? _lastPairCode;
 
   MockApiClient() {
     // デモ用に見守り対象を2名投入（モックモードでのみ表示されるサンプル）
     _seed('c-1', '（サンプル）お母さん', ClientStatus.alive);
     _seed('c-2', '（サンプル）お父さん', ClientStatus.watch);
+
+    // デモ用スタンプ履歴（ウォッチャー詳細/クライアント受信表示の確認用）
+    _clientStamps['c-1'] = [
+      Stamp(
+        id: 's-2',
+        stamp: 'fine',
+        direction: StampDirection.fromClient,
+        senderName: '（サンプル）お母さん',
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      ),
+      Stamp(
+        id: 's-1',
+        stamp: 'fine',
+        direction: StampDirection.fromWatcher,
+        senderName: 'あなた',
+        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+      ),
+    ];
+    _myStamps.add(Stamp(
+      id: 's-0',
+      stamp: 'fine',
+      direction: StampDirection.fromWatcher,
+      senderName: '（サンプル）太郎',
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+    ));
   }
 
   void _seed(String id, String name, ClientStatus status) {
@@ -43,41 +68,165 @@ class MockApiClient implements ApiClient {
   Future<T> _delayed<T>(T value) =>
       Future.delayed(const Duration(milliseconds: 300), () => value);
 
+  AuthResult get _mockAuth => const AuthResult(
+        watcherId: 'mock-watcher-id',
+        accessToken: 'mock-watcher-token',
+        refreshToken: 'mock-refresh-token',
+      );
+
   @override
-  Future<String> registerWatcher({
+  Future<AuthResult> registerWatcher({
     required String email,
     required String password,
     required String displayName,
   }) =>
-      _delayed('mock-watcher-token');
+      _delayed(_mockAuth);
 
   @override
-  Future<String> loginWatcher({
+  Future<AuthResult> loginWatcher({
     required String email,
     required String password,
   }) =>
-      _delayed('mock-watcher-token');
+      _delayed(_mockAuth);
 
   @override
-  Future<PairingCode> createPairingCode() {
-    _lastPairCode =
-        (100000 + _rand.nextInt(900000)).toString(); // 6桁
-    return _delayed(PairingCode(
-      _lastPairCode!,
-      DateTime.now().add(const Duration(minutes: 15)),
+  Future<AuthResult> refreshWatcherToken({required String refreshToken}) =>
+      _delayed(_mockAuth);
+
+  @override
+  Future<AuthResult> registerWatcherDevice({
+    required String installId,
+    required String displayName,
+    required String platform,
+  }) =>
+      _delayed(_mockAuth);
+
+  @override
+  Future<void> registerWatcherEmail({
+    required String watcherToken,
+    required String email,
+    required String password,
+  }) =>
+      _delayed(null);
+
+  @override
+  Future<void> updateWatcherDisplayName({
+    required String watcherToken,
+    required String displayName,
+  }) =>
+      _delayed(null);
+
+  int _claimPolls = 0;
+
+  @override
+  Future<ProvisionResult> createProvision({
+    required String platform,
+    required String consentVersion,
+    String? appVersion,
+    String? fcmToken,
+  }) {
+    _claimPolls = 0;
+    final fallback = (100000 + _rand.nextInt(900000)).toString(); // 6桁
+    return _delayed(ProvisionResult(
+      provisionId: 'prov-${_rand.nextInt(10000)}',
+      claimCode: 'mock-claim-${_rand.nextInt(1000000)}',
+      fallbackCode: fallback,
+      claimSecret: 'mock-secret-${_rand.nextInt(1000000)}',
+      expiresInMinutes: 30,
     ));
   }
 
   @override
-  Future<PairResult> pairClient({
+  Future<ClaimStatus> getClaimStatus({required String claimSecret}) {
+    // デモ用: 数回ポーリングすると「ウォッチャーが登録した」ことにして先へ進める。
+    _claimPolls++;
+    if (_claimPolls >= 2) {
+      return _delayed(ClaimStatus(
+        claimed: true,
+        deviceToken: 'mock-device-token',
+        clientId: 'c-self-${_rand.nextInt(10000)}',
+      ));
+    }
+    return _delayed(const ClaimStatus(claimed: false));
+  }
+
+  @override
+  Future<String> claimClient({
+    required String watcherToken,
     required String code,
     required String displayName,
-    required String consentVersion,
   }) {
     final id = 'c-${_rand.nextInt(10000)}';
     _seed(id, displayName, ClientStatus.alive);
-    return _delayed(PairResult(id, 'mock-device-token'));
+    return _delayed(id);
   }
+
+  int _invitePolls = 0;
+  final List<String> _myWatchers = ['（サンプル）太郎'];
+
+  @override
+  Future<InviteResult> createInviteCode({required String clientToken}) {
+    _invitePolls = 0;
+    final fallback = (100000 + _rand.nextInt(900000)).toString(); // 6桁
+    return _delayed(InviteResult(
+      inviteId: 'inv-${_rand.nextInt(10000)}',
+      inviteCode: 'mock-invite-${_rand.nextInt(1000000)}',
+      fallbackCode: fallback,
+      expiresInMinutes: 30,
+    ));
+  }
+
+  @override
+  Future<InviteStatus> getInviteStatus({
+    required String clientToken,
+    required String inviteId,
+  }) {
+    // デモ用: 数回ポーリングすると「新しい見守り人が参加した」ことにする。
+    _invitePolls++;
+    if (_invitePolls >= 2) {
+      const name = '（サンプル）花子';
+      if (!_myWatchers.contains(name)) _myWatchers.add(name);
+      return _delayed(const InviteStatus(joined: true, watcherName: name));
+    }
+    return _delayed(const InviteStatus(joined: false));
+  }
+
+  @override
+  Future<String> joinClient({
+    required String watcherToken,
+    required String code,
+    required String displayName,
+  }) {
+    // 既存クライアント（サンプル1人目）に watch_link を足す想定。
+    return _delayed('c-1');
+  }
+
+  @override
+  Future<List<String>> listMyWatchers({required String clientToken}) =>
+      _delayed(List<String>.from(_myWatchers));
+
+  @override
+  Future<void> registerClientEmail({
+    required String clientToken,
+    required String email,
+    required String password,
+  }) =>
+      _delayed(null);
+
+  @override
+  Future<ClientLoginResult> loginClient({
+    required String email,
+    required String password,
+    required String platform,
+    required String consentVersion,
+    String? appVersion,
+    String? fcmToken,
+  }) =>
+      _delayed(ClientLoginResult(
+        clientId: 'c-self-mock',
+        deviceId: 'dev-${_rand.nextInt(10000)}',
+        deviceToken: 'mock-device-token',
+      ));
 
   @override
   Future<void> sendHeartbeats({
@@ -88,11 +237,12 @@ class MockApiClient implements ApiClient {
       _delayed(null);
 
   @override
-  Future<SosIncident> sendSos({
+  Future<String> sendSos({
     required String clientToken,
     double? lat,
     double? lng,
     required int batteryLevel,
+    DateTime? capturedAt,
   }) {
     final id = 'sos-${_rand.nextInt(10000)}';
     final incident = SosIncident(
@@ -104,7 +254,7 @@ class MockApiClient implements ApiClient {
       firedAt: DateTime.now(),
     );
     _sos[id] = incident;
-    return _delayed(incident);
+    return _delayed(id);
   }
 
   @override
@@ -113,7 +263,21 @@ class MockApiClient implements ApiClient {
   @override
   Future<void> reportPermissionHealth({
     required String clientToken,
-    required Map<String, bool> permissions,
+    required List<String> issues,
+  }) =>
+      _delayed(null);
+
+  @override
+  Future<void> updateDeviceFcmToken({
+    required String clientToken,
+    required String fcmToken,
+  }) =>
+      _delayed(null);
+
+  @override
+  Future<void> updateWatcherFcmToken({
+    required String watcherToken,
+    required String fcmToken,
   }) =>
       _delayed(null);
 
@@ -155,6 +319,63 @@ class MockApiClient implements ApiClient {
     }
     return _delayed(null);
   }
+
+  // --- スタンプ（インメモリ） ---
+  final Map<String, List<Stamp>> _clientStamps = {};
+  final List<Stamp> _myStamps = [];
+  int _stampSeq = 100;
+
+  @override
+  Future<String> sendStampAsClient({
+    required String clientToken,
+    required String stamp,
+  }) {
+    final s = Stamp(
+      id: 's-${_stampSeq++}',
+      stamp: stamp,
+      direction: StampDirection.fromClient,
+      senderName: 'あなた',
+      createdAt: DateTime.now(),
+    );
+    // 同一端末デモ: 自分の履歴と、ウォッチャー側サンプル1人目の履歴に反映
+    _myStamps.insert(0, s);
+    _clientStamps.putIfAbsent('c-1', () => []).insert(0, s);
+    return _delayed(s.id);
+  }
+
+  @override
+  Future<String> sendStampAsWatcher({
+    required String watcherToken,
+    required String clientId,
+    required String stamp,
+  }) {
+    final s = Stamp(
+      id: 's-${_stampSeq++}',
+      stamp: stamp,
+      direction: StampDirection.fromWatcher,
+      senderName: 'あなた',
+      createdAt: DateTime.now(),
+    );
+    _clientStamps.putIfAbsent(clientId, () => []).insert(0, s);
+    // 同一端末デモ: クライアント側の受信表示にも反映
+    _myStamps.insert(0, s);
+    return _delayed(s.id);
+  }
+
+  @override
+  Future<List<Stamp>> listMyStamps({
+    required String clientToken,
+    int limit = 50,
+  }) =>
+      _delayed(_myStamps.take(limit).toList());
+
+  @override
+  Future<List<Stamp>> listClientStamps({
+    required String watcherToken,
+    required String clientId,
+    int limit = 50,
+  }) =>
+      _delayed((_clientStamps[clientId] ?? const []).take(limit).toList());
 
   // --- デモ操作（UI から状態を切替えて通知フローを確認する用） ---
   void debugSetStatus(String clientId, ClientStatus status) {

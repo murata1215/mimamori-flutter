@@ -5,8 +5,10 @@ import '../app.dart';
 import '../core/heartbeat/heartbeat_task.dart';
 import '../core/providers.dart';
 import '../core/storage/prefs.dart';
+import '../client/auth/client_email_screen.dart';
 import '../client/onboarding/consent_screen.dart';
-import '../watcher/auth/watcher_auth_screen.dart';
+import '../watcher/auth/watcher_email_screen.dart';
+import '../watcher/auth/watcher_name_screen.dart';
 
 /// 設定画面（共通）。通知・アカウント・退会・ロール追加。
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -128,7 +130,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   await prefs.addRole(AppRole.watcher);
                   if (!context.mounted) return;
                   Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const WatcherAuthScreen(),
+                    builder: (_) => const WatcherNameScreen(),
                   ));
                 },
               ),
@@ -152,6 +154,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
 
             const _SectionHeader('アカウント'),
+            if (roles.contains(AppRole.watcher)) ...[
+              ListTile(
+                leading: const Icon(Icons.badge_outlined),
+                title: const Text('お名前を変更', style: TextStyle(fontSize: 18)),
+                subtitle: Text(
+                  prefs.watcherDisplayName ?? '未設定',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                onTap: () => _editWatcherName(context, prefs),
+              ),
+              if (prefs.watcherEmailRegistered)
+                const ListTile(
+                  leading: Icon(Icons.check_circle, color: Color(0xFF2E7D32)),
+                  title: Text('メール登録済み', style: TextStyle(fontSize: 18)),
+                  subtitle: Text('機種変更のときに引き継げます',
+                      style: TextStyle(fontSize: 14)),
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.mail_outline),
+                  title: const Text('メールアドレスを登録',
+                      style: TextStyle(fontSize: 18)),
+                  subtitle: const Text('機種変更にそなえて引き継げるようにします',
+                      style: TextStyle(fontSize: 14)),
+                  onTap: () async {
+                    final registered = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => const WatcherEmailScreen(),
+                      ),
+                    );
+                    if (registered == true) setState(() {});
+                  },
+                ),
+            ],
+            if (roles.contains(AppRole.client)) ...[
+              if (prefs.clientEmailRegistered)
+                const ListTile(
+                  leading: Icon(Icons.check_circle, color: Color(0xFF2E7D32)),
+                  title: Text('メール登録済み', style: TextStyle(fontSize: 18)),
+                  subtitle: Text('機種変更のときに引き継げます',
+                      style: TextStyle(fontSize: 14)),
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.mail_outline),
+                  title: const Text('メールアドレスを登録',
+                      style: TextStyle(fontSize: 18)),
+                  subtitle: const Text('機種変更にそなえて引き継げるようにします',
+                      style: TextStyle(fontSize: 14)),
+                  onTap: () async {
+                    final registered = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => const ClientEmailScreen(),
+                      ),
+                    );
+                    if (registered == true) setState(() {});
+                  },
+                ),
+            ],
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('退会する',
@@ -168,6 +229,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _editWatcherName(BuildContext context, Prefs prefs) async {
+    final ctrl = TextEditingController(text: prefs.watcherDisplayName ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('お名前を変更'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          style: const TextStyle(fontSize: 18),
+          decoration: const InputDecoration(
+            hintText: '例：たろう',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('やめる'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            child: const Text('変更する'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+
+    final token = prefs.watcherToken;
+    if (token != null) {
+      try {
+        await ref
+            .read(apiClientProvider)
+            .updateWatcherDisplayName(watcherToken: token, displayName: name);
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('変更に失敗しました。もう一度お試しください。')),
+          );
+        }
+        return;
+      }
+    }
+    await prefs.setWatcherDisplayName(name);
+    if (mounted) setState(() {});
   }
 
   Future<void> _confirmDelete(BuildContext context, Prefs prefs) async {

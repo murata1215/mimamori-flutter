@@ -3,8 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../settings/settings_screen.dart';
+import '../invite/invite_qr_screen.dart';
 import '../permission_health.dart';
 import '../sos/sos_button.dart';
+import '../stamps/stamp_section.dart';
+
+/// クライアント端末を見守ってくれている人の名前一覧（最小開示）。
+final myWatchersProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  final prefs = ref.watch(prefsProvider);
+  final token = prefs.clientToken ?? 'mock-client-token';
+  return api.listMyWatchers(clientToken: token);
+});
 
 /// クライアントのホーム画面（普段は見ない画面）。
 /// - 見守り状態（動作中 / 権限に問題）
@@ -41,6 +51,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
   }
 
   Future<void> _refresh() async {
+    ref.invalidate(myStampsProvider);
+    ref.invalidate(myWatchersProvider);
     final health = await PermissionHealth.check();
     if (!mounted) return;
     setState(() => _health = health);
@@ -53,7 +65,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
         try {
           await ref.read(apiClientProvider).reportPermissionHealth(
                 clientToken: token,
-                permissions: health.toApiMap(),
+                issues: health.toApiIssues(),
               );
         } catch (_) {}
       }
@@ -123,6 +135,10 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
               const SosButton(),
 
               const SizedBox(height: 40),
+              // きもち（スタンプ）の送受信
+              const StampSection(),
+
+              const SizedBox(height: 40),
               const _WatchersList(),
             ],
           ),
@@ -179,17 +195,54 @@ class _WatchersList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Phase 1: 見守っている人の名前のみ表示（詳細情報は持たない）
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text('見守ってくれている人',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        SizedBox(height: 12),
+    // 見守っている人の名前のみ表示（最小開示）。取得失敗時は汎用表示にフォールバック。
+    final watchersAsync = ref.watch(myWatchersProvider);
+    final names = watchersAsync.valueOrNull;
+
+    final List<Widget> cards;
+    if (names != null && names.isNotEmpty) {
+      cards = names
+          .map((n) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.person, size: 32),
+                  title: Text(n, style: const TextStyle(fontSize: 18)),
+                ),
+              ))
+          .toList();
+    } else {
+      cards = const [
         Card(
           child: ListTile(
             leading: Icon(Icons.person, size: 32),
             title: Text('ご家族', style: TextStyle(fontSize: 18)),
+          ),
+        ),
+      ];
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('見守ってくれている人',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        ...cards,
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            icon: const Icon(Icons.person_add_alt_1, size: 28),
+            label: const Text('見守る人を追加',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              final added = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const InviteQrScreen()),
+              );
+              if (added == true) ref.invalidate(myWatchersProvider);
+            },
           ),
         ),
       ],

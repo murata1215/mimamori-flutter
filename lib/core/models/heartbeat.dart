@@ -3,13 +3,18 @@
 /// プライバシー原則: サーバーへ送るのは
 ///  - screen_on_count（回数）
 ///  - had_app_usage（利用有無 boolean）
+///  - had_movement（移動有無 boolean。座標・距離・軌跡は送らない）
 ///  - battery_level
-/// のみ。アプリ名・URL・詳細時刻など行動の中身は絶対に含めない。
+/// のみ。アプリ名・URL・詳細時刻・座標など行動の中身は絶対に含めない。
 class Heartbeat {
   final DateTime occurredAt;
   final int batteryLevel;
   final int screenOnCount;
   final bool hadAppUsage;
+
+  /// 前回位置と比べて一定距離以上移動したか（活動シグナル）。
+  /// 位置を取得できなかった場合は null（＝サーバーへ送らない）。
+  final bool? hadMovement;
   final String appVersion;
 
   const Heartbeat({
@@ -17,6 +22,7 @@ class Heartbeat {
     required this.batteryLevel,
     required this.screenOnCount,
     required this.hadAppUsage,
+    this.hadMovement,
     required this.appVersion,
   });
 
@@ -25,6 +31,7 @@ class Heartbeat {
         'battery_level': batteryLevel,
         'screen_on_count': screenOnCount,
         'had_app_usage': hadAppUsage,
+        'had_movement': ?hadMovement,
         'app_version': appVersion,
       };
 
@@ -33,6 +40,7 @@ class Heartbeat {
         batteryLevel: (json['battery_level'] as num).toInt(),
         screenOnCount: (json['screen_on_count'] as num).toInt(),
         hadAppUsage: json['had_app_usage'] as bool,
+        hadMovement: json['had_movement'] as bool?,
         appVersion: (json['app_version'] as String?) ?? '',
       );
 }

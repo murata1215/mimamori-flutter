@@ -20,9 +20,11 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions"/>
 
-    <!-- 位置情報 (SOS 時のみ利用) -->
+    <!-- 位置情報 (端末内キャッシュ＝活動量シグナル用。座標のサーバー送信は SOS 時のみ) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- バックグラウンド（15分周期ハートビート）で位置をキャッシュするため -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
     <!-- SOS フォールバック用 SMS 直送信 (事前許可制) -->
     <uses-permission android:name="android.permission.SEND_SMS"/>

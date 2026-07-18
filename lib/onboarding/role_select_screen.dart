@@ -5,7 +5,7 @@ import '../client/client_shell.dart';
 import '../client/onboarding/consent_screen.dart';
 import '../core/providers.dart';
 import '../core/storage/prefs.dart';
-import '../watcher/auth/watcher_auth_screen.dart';
+import '../watcher/auth/watcher_name_screen.dart';
 
 /// ロール選択画面（共通・初回起動）。
 /// 「見守られる」= クライアント / 「見守る」= ウォッチャー。
@@ -35,7 +35,7 @@ class RoleSelectScreen extends ConsumerWidget {
     await prefs.setActiveRole(AppRole.watcher);
     if (!context.mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const WatcherAuthScreen()),
+      MaterialPageRoute(builder: (_) => const WatcherNameScreen()),
     );
   }
 

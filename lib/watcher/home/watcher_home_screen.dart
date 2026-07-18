@@ -7,7 +7,7 @@ import '../../core/models/watched_client.dart';
 import '../../settings/settings_screen.dart';
 import '../detail/client_detail_screen.dart';
 import '../owner/owner_dashboard_screen.dart';
-import '../pairing/pairing_issue_screen.dart';
+import '../pairing/watcher_scan_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../watcher_providers.dart';
 
@@ -116,7 +116,7 @@ class WatcherHomeScreen extends ConsumerWidget {
     }
     if (!context.mounted) return;
     await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => const PairingIssueScreen(),
+      builder: (_) => const WatcherScanScreen(),
     ));
     ref.invalidate(watchedClientsProvider);
   }
