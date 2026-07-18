@@ -62,11 +62,15 @@ class MockApiClient implements ApiClient {
   }
 
   void _seed(String id, String name, ClientStatus status) {
+    final now = DateTime.now();
     _clients[id] = WatchedClient(
       id: id,
       displayName: name,
       status: status,
-      statusChangedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      statusChangedAt: now.subtract(const Duration(hours: 2)),
+      // 最終操作＝約40分前、最終通信＝約5分前（画面確認用のデモ値）。
+      lastActivityAt: now.subtract(const Duration(minutes: 40)),
+      lastSeenAt: now.subtract(const Duration(minutes: 5)),
     );
     _history[id] = [
       StatusTransition(

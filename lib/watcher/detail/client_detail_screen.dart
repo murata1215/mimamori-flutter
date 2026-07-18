@@ -11,8 +11,8 @@ import '../sos/sos_navigation.dart';
 import '../watcher_providers.dart';
 
 /// クライアント詳細画面。
-/// 現在ステータス、ステータス変更履歴（遷移粒度のみ）、通知設定。
-/// 行動詳細・最終操作時刻は一切表示しない。
+/// 現在ステータス、最終操作/通信時刻、ステータス変更履歴（遷移粒度のみ）、通知設定。
+/// 開示するのは時刻のみ（15分粒度）。アプリ名・操作内容は一切表示しない。
 class ClientDetailScreen extends ConsumerWidget {
   const ClientDetailScreen({super.key, required this.client});
   final WatchedClient client;
@@ -45,20 +45,40 @@ class ClientDetailScreen extends ConsumerWidget {
                   Icon(client.status.icon,
                       color: client.status.color, size: 48),
                   const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(client.status.label,
-                          style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: client.status.color)),
-                      if (client.statusChangedAt != null)
-                        Text(
-                          _formatDate(client.statusChangedAt!),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(client.status.label,
+                            style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: client.status.color)),
+                        const SizedBox(height: 4),
+                        // 最終操作時刻（本人が最後に端末を触った時刻）＝生存確認の要。
+                        // 15分粒度のため「ごろ」を付けて表示する。
+                        if (client.lastActivityAt != null)
+                          _InfoLine(
+                            icon: Icons.touch_app,
+                            text: '最終操作 ${_formatDate(client.lastActivityAt!)}ごろ',
+                            bold: true,
+                          ),
+                        // 最終通信時刻（端末がサーバーに到達した最後の時点）。
+                        // 操作がなくても端末が生きていることを示す補助表示。
+                        if (client.lastSeenAt != null)
+                          _InfoLine(
+                            icon: Icons.wifi_tethering,
+                            text: '最終通信 ${_formatDate(client.lastSeenAt!)}',
+                          ),
+                        // 非 ALIVE のときは「いつからその状態か」も重要なので併記。
+                        if (client.status != ClientStatus.alive &&
+                            client.statusChangedAt != null)
+                          _InfoLine(
+                            icon: Icons.schedule,
+                            text: '${_formatDate(client.statusChangedAt!)} から',
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -195,6 +215,36 @@ class ClientDetailScreen extends ConsumerWidget {
   String _formatDate(DateTime d) {
     final l = d.toLocal();
     return '${l.month}月${l.day}日 ${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// ステータスカード内の補助情報1行（アイコン＋テキスト）。
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.icon, required this.text, this.bold = false});
+  final IconData icon;
+  final String text;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.black54),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

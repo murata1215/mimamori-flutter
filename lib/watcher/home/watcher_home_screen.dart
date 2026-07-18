@@ -128,6 +128,17 @@ class WatcherHomeScreen extends ConsumerWidget {
   }
 }
 
+/// 最終操作時刻を一覧向けに短く相対表現する（15分粒度なので「ごろ」を付ける）。
+/// 例: 「たった今ごろ」「30分前ごろ」「3時間前ごろ」「7月18日 22:18ごろ」。
+String _relativeTime(DateTime at) {
+  final l = at.toLocal();
+  final diff = DateTime.now().difference(l);
+  if (diff.inMinutes < 15) return 'たった今ごろ';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}分前ごろ';
+  if (diff.inHours < 24) return '${diff.inHours}時間前ごろ';
+  return '${l.month}月${l.day}日 ${l.hour.toString().padLeft(2, '0')}:${l.minute.toString().padLeft(2, '0')}ごろ';
+}
+
 class _ClientCard extends ConsumerWidget {
   const _ClientCard({required this.client, required this.onResolved});
   final WatchedClient client;
@@ -190,6 +201,16 @@ class _ClientCard extends ConsumerWidget {
                                   : client.status.label,
                               color: color,
                             ),
+                            // 最終操作時刻（本人が最後に端末を触った時刻）。
+                            // 一覧で全員の安否を一目で把握できるようにする。
+                            if (!isSos && client.lastActivityAt != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                '最終操作 ${_relativeTime(client.lastActivityAt!)}',
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.black54),
+                              ),
+                            ],
                           ],
                         ),
                       ),
