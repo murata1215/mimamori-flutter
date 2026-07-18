@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/providers.dart';
 import '../../settings/settings_screen.dart';
 import '../invite/invite_qr_screen.dart';
@@ -51,7 +52,8 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
   }
 
   Future<void> _refresh() async {
-    ref.invalidate(myStampsProvider);
+    // ignore: dead_code
+    if (kEnableStamps) ref.invalidate(myStampsProvider);
     ref.invalidate(myWatchersProvider);
     final health = await PermissionHealth.check();
     if (!mounted) return;
@@ -129,14 +131,19 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen>
                 const SizedBox(height: 12),
                 _HealthRepair(health: health, onFixed: _refresh),
               ],
-              const SizedBox(height: 40),
+              // SOS 大ボタン（kEnableSosSend で表示制御）
+              // ignore: dead_code
+              if (kEnableSosSend) ...[
+                const SizedBox(height: 40),
+                const SosButton(),
+              ],
 
-              // SOS 大ボタン
-              const SosButton(),
-
-              const SizedBox(height: 40),
-              // きもち（スタンプ）の送受信
-              const StampSection(),
+              // きもち（スタンプ）の送受信（kEnableStamps で表示制御）
+              // ignore: dead_code
+              if (kEnableStamps) ...[
+                const SizedBox(height: 40),
+                const StampSection(),
+              ],
 
               const SizedBox(height: 40),
               const _WatchersList(),

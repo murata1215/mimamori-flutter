@@ -79,8 +79,11 @@
         </receiver>
 
         <!-- SOS ホームウィジェット (2x2) -->
+        <!-- Phase 1 では SOS 発信 UI を隠すため無効化（コード・レイアウトは温存）。
+             再表示するときは android:enabled を true に戻す。 -->
         <receiver
             android:name=".SosWidgetProvider"
+            android:enabled="false"
             android:exported="true"
             android:label="たすけて (SOS)">
             <intent-filter>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/models/client_status.dart';
 import '../../core/models/stamp.dart';
 import '../../core/models/watched_client.dart';
@@ -80,9 +81,12 @@ class ClientDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // スタンプ（きもち）の送信と双方向履歴
-            _StampPanel(client: client),
-            const SizedBox(height: 24),
+            // スタンプ（きもち）の送信と双方向履歴（kEnableStamps で表示制御）
+            // ignore: dead_code
+            if (kEnableStamps) ...[
+              _StampPanel(client: client),
+              const SizedBox(height: 24),
+            ],
 
             const Text('見守りの記録',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
