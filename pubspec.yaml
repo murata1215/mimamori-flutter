@@ -122,6 +122,15 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # アプリ全体の日本語フォント（丸ゴシック / 高齢者にも読みやすい）。
+  # 端末依存の明朝フォールバックを避けるため同梱する。
+  fonts:
+    - family: MPLUSRounded1c
+      fonts:
+        - asset: assets/fonts/MPLUSRounded1c-Regular.ttf
+        - asset: assets/fonts/MPLUSRounded1c-Bold.ttf
+          weight: 700
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

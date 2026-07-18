@@ -135,33 +135,20 @@ class _ClientCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSos = client.status == ClientStatus.sos;
+    final color = client.status.color;
 
     // SOS のときはカードを強調し、タップで直接 SOS 確認画面へ入れる。
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      color: isSos ? client.status.color.withValues(alpha: 0.10) : null,
-      shape: isSos
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: client.status.color, width: 2),
-            )
-          : null,
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        leading: _Badge(status: client.status),
-        title: Text(client.displayName,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-        subtitle: Text(isSos ? 'SOS 発報中 - タップして確認' : client.status.label,
-            style: TextStyle(
-                fontSize: 16,
-                color: client.status.color,
-                fontWeight: FontWeight.w600)),
-        trailing: Icon(
-          isSos ? Icons.sos : Icons.chevron_right,
-          size: 28,
-          color: isSos ? client.status.color : null,
-        ),
+      color: isSos ? color.withValues(alpha: 0.08) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: isSos
+            ? BorderSide(color: color, width: 2)
+            : const BorderSide(color: Color(0x14000000)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: () async {
           if (isSos) {
             final resolved =
@@ -174,6 +161,75 @@ class _ClientCard extends ConsumerWidget {
             builder: (_) => ClientDetailScreen(client: client),
           ));
         },
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // 左端のステータス色アクセントバー。
+              Container(width: 6, color: color),
+              Expanded(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      _Badge(status: client.status),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(client.displayName,
+                                style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 6),
+                            _StatusPill(
+                              label: isSos
+                                  ? 'SOS 発報中 - タップして確認'
+                                  : client.status.label,
+                              color: color,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        isSos ? Icons.sos : Icons.chevron_right,
+                        size: 28,
+                        color: isSos ? color : Colors.black38,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ステータスを淡色背景のピル型チップで表示する。
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 15,
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -217,9 +273,9 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CircleAvatar(
-      radius: 28,
+      radius: 24,
       backgroundColor: status.color.withValues(alpha: 0.15),
-      child: Icon(status.icon, color: status.color, size: 30),
+      child: Icon(status.icon, color: status.color, size: 26),
     );
   }
 }

@@ -77,10 +77,17 @@ class _AdBannerBarState extends State<AdBannerBar> {
     if (!kEnableAds || !_loaded || ad == null) {
       return const SizedBox.shrink();
     }
-    return SizedBox(
-      width: ad.size.width.toDouble(),
-      height: ad.size.height.toDouble(),
-      child: AdWidget(ad: ad),
+    // 広告本体は幅が画面より狭いことがあるため、画面背景色で全幅を埋めて
+    // 中央寄せする（上下左右の黒帯を防ぐ）。
+    return Container(
+      width: double.infinity,
+      color: Theme.of(context).scaffoldBackgroundColor,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: ad.size.width.toDouble(),
+        height: ad.size.height.toDouble(),
+        child: AdWidget(ad: ad),
+      ),
     );
   }
 }
