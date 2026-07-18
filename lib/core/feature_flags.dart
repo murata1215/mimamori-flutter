@@ -18,3 +18,9 @@ const bool kEnableSosSend = false;
 /// 将来 RevenueCat の有料エンタイトルメント保有者は false 相当にして
 /// 広告非表示にする拡張余地あり（AdBannerBar 側で購読状態を見て分岐する）。
 const bool kEnableAds = true;
+
+/// 無料枠の見守り人数制限（2人）とペイウォール表示。
+/// テスト中は false で無効化（3人以上を登録可能にする）。
+/// サーバー側の 402 制限も別途 watcher.plan を owner にして無効化する必要あり。
+/// TODO: 課金テスト・リリース前に true へ戻す（併せてサーバーの plan も free に戻す）。
+const bool kEnableFreeWatchLimit = false;

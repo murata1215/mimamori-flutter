@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config.dart';
+import '../../core/feature_flags.dart';
 import '../../core/models/client_status.dart';
 import '../../core/models/watched_client.dart';
 import '../../settings/settings_screen.dart';
@@ -112,8 +113,8 @@ class WatcherHomeScreen extends ConsumerWidget {
 
   Future<void> _addClient(BuildContext context, WidgetRef ref) async {
     final clients = ref.read(watchedClientsProvider).valueOrNull ?? [];
-    // 無料枠は2人まで。3人目からペイウォール。
-    if (clients.length >= 2) {
+    // 無料枠は2人まで。3人目からペイウォール。（テスト中はフラグで無効化）
+    if (kEnableFreeWatchLimit && clients.length >= 2) {
       final purchased = await Navigator.of(context).push<bool>(
         MaterialPageRoute(builder: (_) => const PaywallScreen()),
       );
