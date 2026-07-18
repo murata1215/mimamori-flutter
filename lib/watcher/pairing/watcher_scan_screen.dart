@@ -53,8 +53,9 @@ class _WatcherScanScreenState extends ConsumerState<WatcherScanScreen> {
         await api.claimClient(
             watcherToken: token, code: code, displayName: name);
       } on ApiException catch (e) {
-        // claim コードでない（404）＝追加見守りの招待コード → join にフォールバック。
-        if (e.statusCode == 404) {
+        // claim コードでない場合は追加見守りの招待コード → join にフォールバック。
+        // サーバーは未知コードに 400（invalid_code）を返すため 400 も対象にする（404 も一応許容）。
+        if (e.statusCode == 400 || e.statusCode == 404) {
           await api.joinClient(
               watcherToken: token, code: code, displayName: name);
         } else {
