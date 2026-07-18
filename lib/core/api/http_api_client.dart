@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../models/daily_activity.dart';
 import '../models/heartbeat.dart';
 import '../models/sos_incident.dart';
 import '../models/stamp.dart';
@@ -530,6 +531,29 @@ class HttpApiClient implements ApiClient {
           .map((e) => StatusTransition.fromJson(e as Map<String, dynamic>))
           .toList();
     } on DioException catch (e) {
+      _rethrow(e);
+    }
+  }
+
+  @override
+  Future<List<DailyActivity>> getClientActivity({
+    required String watcherToken,
+    required String clientId,
+    int days = 3,
+  }) async {
+    try {
+      final r = await _dio.get(
+        '/v1/clients/$clientId/activity',
+        queryParameters: {'days': days},
+        options: _auth(watcherToken),
+      );
+      final data = r.data as Map<String, dynamic>;
+      final list = (data['days'] as List<dynamic>? ?? const []);
+      return list
+          .map((e) => DailyActivity.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return const []; // 権限なし/データなし
       _rethrow(e);
     }
   }

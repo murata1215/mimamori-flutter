@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/models/daily_activity.dart';
 import '../core/models/stamp.dart';
 import '../core/models/watched_client.dart';
 import '../core/providers.dart';
@@ -30,4 +31,14 @@ final stampHistoryProvider = FutureProvider.autoDispose
   final prefs = ref.watch(prefsProvider);
   final token = prefs.watcherToken ?? 'mock-watcher-token';
   return api.listClientStamps(watcherToken: token, clientId: clientId);
+});
+
+/// 指定クライアントの過去3日間の活動量（新しい日→古い日）。
+final clientActivityProvider = FutureProvider.autoDispose
+    .family<List<DailyActivity>, String>((ref, clientId) async {
+  final api = ref.watch(apiClientProvider);
+  final prefs = ref.watch(prefsProvider);
+  final token = prefs.watcherToken ?? 'mock-watcher-token';
+  return api.getClientActivity(
+      watcherToken: token, clientId: clientId, days: 3);
 });

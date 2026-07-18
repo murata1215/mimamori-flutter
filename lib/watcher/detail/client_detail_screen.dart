@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/feature_flags.dart';
 import '../../core/models/client_status.dart';
+import '../../core/models/daily_activity.dart';
 import '../../core/models/stamp.dart';
 import '../../core/models/watched_client.dart';
 import '../../core/providers.dart';
@@ -87,6 +88,10 @@ class ClientDetailScreen extends ConsumerWidget {
               _StampPanel(client: client),
               const SizedBox(height: 24),
             ],
+
+            // この3日間のようす（活動量）
+            _ActivityPanel(clientId: client.id),
+            const SizedBox(height: 24),
 
             const Text('見守りの記録',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -177,6 +182,140 @@ class _SosBanner extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// この3日間の活動量パネル（数量のみ・プライバシー最小開示）。
+/// 画面点灯回数・うごき/スマホ利用の概算時間を日毎に表示する。
+class _ActivityPanel extends ConsumerWidget {
+  const _ActivityPanel({required this.clientId});
+  final String clientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activityAsync = ref.watch(clientActivityProvider(clientId));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('この3日間のようす',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        activityAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, _) => const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('活動量を読み込めませんでした', style: TextStyle(fontSize: 16)),
+          ),
+          data: (days) {
+            // 今日・きのう・おとといの3日枠を作り、取得データを日付で突き合わせる。
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
+            final rows = <Widget>[];
+            for (var ago = 0; ago < 3; ago++) {
+              final d = today.subtract(Duration(days: ago));
+              DailyActivity? found;
+              for (final a in days) {
+                final ad = DateTime(a.date.year, a.date.month, a.date.day);
+                if (ad == d) {
+                  found = a;
+                  break;
+                }
+              }
+              rows.add(_DayCard(label: _dayLabel(ago), activity: found));
+            }
+            return Column(children: rows);
+          },
+        ),
+      ],
+    );
+  }
+
+  String _dayLabel(int ago) {
+    switch (ago) {
+      case 0:
+        return '今日';
+      case 1:
+        return 'きのう';
+      default:
+        return 'おととい';
+    }
+  }
+}
+
+/// 1日分の活動量カード。データなしは「記録がありません」。
+class _DayCard extends StatelessWidget {
+  const _DayCard({required this.label, required this.activity});
+  final String label;
+  final DailyActivity? activity;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = activity;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (a == null || !a.hasActivity)
+              const Text('記録がありません',
+                  style: TextStyle(fontSize: 16, color: Colors.black54))
+            else ...[
+              _MetricRow(
+                icon: Icons.phone_android,
+                label: '画面をつけた回数',
+                value: '${a.screenOnCount}回',
+              ),
+              const SizedBox(height: 6),
+              _MetricRow(
+                icon: Icons.directions_walk,
+                label: 'うごきがあった時間',
+                value: a.movementDuration,
+              ),
+              const SizedBox(height: 6),
+              _MetricRow(
+                icon: Icons.touch_app,
+                label: 'スマホを使った時間',
+                value: a.appUsageDuration,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 22, color: const Color(0xFF2E7D32)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(label, style: const TextStyle(fontSize: 16)),
+        ),
+        Text(value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }

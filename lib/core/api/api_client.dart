@@ -1,3 +1,4 @@
+import '../models/daily_activity.dart';
 import '../models/heartbeat.dart';
 import '../models/sos_incident.dart';
 import '../models/stamp.dart';
@@ -153,6 +154,15 @@ abstract class ApiClient {
   Future<List<StatusTransition>> statusHistory({
     required String watcherToken,
     required String clientId,
+  });
+
+  /// クライアントの日次活動量（過去 [days] 日、既定3日）。
+  /// 数量の集計のみ（時刻詳細・アプリ名・座標は含まない）。
+  /// 新しい日→古い日の順で返す。
+  Future<List<DailyActivity>> getClientActivity({
+    required String watcherToken,
+    required String clientId,
+    int days = 3,
   });
 
   Future<SosIncident?> getSos({

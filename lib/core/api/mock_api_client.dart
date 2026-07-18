@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import '../models/client_status.dart';
+import '../models/daily_activity.dart';
 import '../models/heartbeat.dart';
 import '../models/sos_incident.dart';
 import '../models/stamp.dart';
@@ -302,6 +303,37 @@ class MockApiClient implements ApiClient {
     required String clientId,
   }) =>
       _delayed(_history[clientId] ?? const []);
+
+  @override
+  Future<List<DailyActivity>> getClientActivity({
+    required String watcherToken,
+    required String clientId,
+    int days = 3,
+  }) {
+    // サンプル: c-1（活発）/ c-3（少なめ）で見え方を変える。おととい分は欠損。
+    final active = clientId != 'c-3';
+    final today = DateTime.now();
+    DateTime dayOnly(int ago) =>
+        DateTime(today.year, today.month, today.day - ago);
+    final result = <DailyActivity>[
+      DailyActivity(
+        date: dayOnly(0),
+        screenOnCount: active ? 47 : 12,
+        appUsageSlots: active ? 12 : 3,
+        movementSlots: active ? 8 : 2,
+        heartbeatCount: active ? 72 : 60,
+      ),
+      DailyActivity(
+        date: dayOnly(1),
+        screenOnCount: active ? 35 : 8,
+        appUsageSlots: active ? 9 : 2,
+        movementSlots: active ? 5 : 1,
+        heartbeatCount: active ? 68 : 55,
+      ),
+      // おととい（ago=2）はデータなしで「記録がありません」表示を確認できる。
+    ];
+    return _delayed(result.take(days.clamp(1, 7)).toList());
+  }
 
   @override
   Future<SosIncident?> getSos({

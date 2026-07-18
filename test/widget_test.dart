@@ -5,6 +5,7 @@ import 'package:mimamori_flutter/client/location/location_cache.dart';
 import 'package:mimamori_flutter/core/api/api_client.dart';
 import 'package:mimamori_flutter/core/api/mock_api_client.dart';
 import 'package:mimamori_flutter/core/models/client_status.dart';
+import 'package:mimamori_flutter/core/models/daily_activity.dart';
 import 'package:mimamori_flutter/core/models/heartbeat.dart';
 import 'package:mimamori_flutter/core/models/sos_incident.dart';
 import 'package:mimamori_flutter/core/models/stamp.dart';
@@ -389,6 +390,64 @@ void main() {
       final clients = await api.listClients(watcherToken: 't');
       final c3 = clients.firstWhere((c) => c.id == 'c-3');
       expect(c3.status, ClientStatus.alive);
+    });
+  });
+
+  group('DailyActivity 活動量', () {
+    test('fromJson が集計フィールドをパースする', () {
+      final a = DailyActivity.fromJson(const {
+        'date': '2026-07-18',
+        'screen_on_count': 47,
+        'app_usage_slots': 12,
+        'movement_slots': 8,
+        'heartbeat_count': 72,
+      });
+      expect(a.date, DateTime(2026, 7, 18));
+      expect(a.screenOnCount, 47);
+      expect(a.appUsageSlots, 12);
+      expect(a.movementSlots, 8);
+      expect(a.heartbeatCount, 72);
+      expect(a.hasActivity, isTrue);
+    });
+
+    test('欠損フィールドは 0 にフォールバックし hasActivity=false', () {
+      final a = DailyActivity.fromJson(const {'date': '2026-07-18'});
+      expect(a.screenOnCount, 0);
+      expect(a.movementSlots, 0);
+      expect(a.hasActivity, isFalse);
+    });
+
+    test('スロット数→概算時間の表示（0 / 1 / 4 / 5 スロット）', () {
+      DailyActivity make(int slots) => DailyActivity(
+            date: DateTime(2026, 7, 18),
+            screenOnCount: 0,
+            appUsageSlots: slots,
+            movementSlots: slots,
+            heartbeatCount: 0,
+          );
+      expect(make(0).movementDuration, '—'); // 0 は「—」
+      expect(make(1).movementDuration, '約15分'); // 15分
+      expect(make(4).movementDuration, '約1時間'); // 60分ちょうど
+      expect(make(5).movementDuration, '約1時間15分'); // 75分
+      expect(make(8).appUsageDuration, '約2時間'); // 120分
+    });
+  });
+
+  group('MockApiClient 活動量', () {
+    test('活発なサンプル（c-1）は2日分の活動を返す', () async {
+      final api = MockApiClient();
+      final days =
+          await api.getClientActivity(watcherToken: 't', clientId: 'c-1');
+      expect(days.length, 2);
+      expect(days.first.hasActivity, isTrue);
+      expect(days.first.screenOnCount, 47);
+    });
+
+    test('days=1 で1日分に絞られる', () async {
+      final api = MockApiClient();
+      final days = await api
+          .getClientActivity(watcherToken: 't', clientId: 'c-1', days: 1);
+      expect(days.length, 1);
     });
   });
 
